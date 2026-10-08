@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MediRoute AI — Emergency Coordination</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+:root{
+  --bg:#f4f7f7;--surface:#fff;--surface2:#f8fbfb;--ink:#10242b;--muted:#64767d;
+  --teal:#075f61;--teal2:#0a7778;--red:#d7193f;--green:#139a61;--amber:#d99113;
+  --line:#dce6e6;--shadow:0 14px 40px rgba(16,36,43,.08);--radius:18px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI","Noto Sans Tamil","Latha",sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.topbar{height:76px;background:linear-gradient(110deg,#075f61,#087476);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:1000;box-shadow:0 8px 24px rgba(0,0,0,.08)}
+.brand{display:flex;align-items:center;gap:12px}.brand-icon{width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,.15);display:grid;place-items:center;font-size:23px}.brand h1{font-size:21px;margin:0}.brand small{display:block;font-size:11px;opacity:.8;margin-top:2px}
+.nav{display:flex;gap:8px;align-items:center}.nav button{border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;padding:10px 16px;border-radius:12px;font-weight:700}.nav button.active{background:#fff;color:var(--teal)}.nav button.lang{min-width:72px}
+.page{max-width:1240px;margin:0 auto;padding:26px}
+.view{display:none}.view.active{display:block}
+.hero{background:linear-gradient(135deg,#075f61 0%,#0b7b7a 55%,#0d8d82 100%);color:#fff;border-radius:24px;padding:34px;box-shadow:var(--shadow);margin-bottom:22px}.hero h2{font-size:31px;margin:0 0 8px}.hero p{margin:0;max-width:720px;opacity:.9}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}.card h2,.card h3{margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin:13px 0 6px}input,select,textarea{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px 13px;color:var(--ink);outline:none}input:focus,select:focus,textarea:focus{border-color:#0a8585;box-shadow:0 0 0 3px rgba(10,133,133,.1)}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:11px 16px;font-weight:800}.btn.primary{background:var(--red);color:#fff;border-color:var(--red)}.btn.teal{background:var(--teal);color:#fff;border-color:var(--teal)}.btn.green{background:var(--green);color:#fff;border-color:var(--green)}.btn.ghost{background:transparent}.btn:disabled{opacity:.55;cursor:not-allowed}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.muted{color:var(--muted)}.tiny{font-size:12px}.error{color:#b20f31;background:#fff0f3;border:1px solid #ffc5d0;border-radius:10px;padding:9px 11px;margin-top:10px}.success{color:#08784b;background:#edfff6;border:1px solid #b8efd5;border-radius:10px;padding:9px 11px;margin-top:10px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800}.badge.green{background:#e5faef;color:#08784b}.badge.red{background:#fff0f3;color:#b20f31}.badge.amber{background:#fff6e5;color:#9a6400}.badge.gray{background:#eef2f3;color:#596b72}
+.stat{padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface2)}.stat strong{display:block;font-size:27px}.stat span{font-size:12px;color:var(--muted)}
+.hospital{border:1px solid var(--line);border-radius:16px;padding:16px;background:#fff;margin-top:11px;transition:.15s}.hospital:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(16,36,43,.06)}.hospital.unavailable{opacity:.68}
+.hospital .bar{width:5px;height:100%;border-radius:99px;background:var(--green)}.hospital.unavailable .bar{background:#b7c3c6}.hospital h3{margin:0;font-size:16px}
+.auth-shell{min-height:calc(100vh - 76px);display:grid;place-items:center;padding:35px 20px;background:radial-gradient(circle at 10% 0%,#e5f7f5,transparent 35%),var(--bg)}
+.auth-card{width:min(100%,470px);background:#fff;border:1px solid var(--line);border-radius:26px;padding:30px;box-shadow:0 24px 70px rgba(16,36,43,.12)}
+.auth-logo{width:60px;height:60px;border-radius:18px;background:#e8f7f5;display:grid;place-items:center;font-size:31px;margin-bottom:17px}.auth-card h2{font-size:27px;margin:0 0 7px}.auth-card .sub{color:var(--muted);margin:0 0 20px}.role-switch{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}.role-switch button{border:1px solid var(--line);background:#fff;padding:11px 7px;border-radius:12px;font-weight:800}.role-switch button.active{border-color:#0a8585;background:#eaf8f7;color:var(--teal)}
+.otp{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.otp input{text-align:center;font-size:22px;font-weight:800;padding:12px 4px}.demo-code{margin-top:12px;padding:11px;border-radius:12px;background:#fff8df;border:1px dashed #e2b94f;color:#7b5b00;font-size:13px}
+.map-card{padding:0;overflow:hidden}.public-map-card{margin-top:18px;display:none}.public-map-card.active{display:block}.public-map-card #publicMap{height:430px;width:100%}.public-map-head{padding:16px 18px;background:#fff;border-bottom:1px solid var(--line)}.public-route-panel{padding:16px 18px;background:#fff}.public-destination{font-size:19px;font-weight:900}.public-route-eta{font-size:30px;font-weight:900}.public-dir{padding:10px 12px;border-radius:10px;background:#f4fbfa;margin-top:10px}.map-head{padding:16px 18px;background:#fff;border-bottom:1px solid var(--line)}#map{height:510px;width:100%}.map-tools{position:absolute;z-index:500;right:12px;top:78px;display:flex;gap:8px}.map-pill{background:#fff;border:1px solid var(--line);box-shadow:0 6px 18px rgba(0,0,0,.12);border-radius:999px;padding:8px 11px;font-size:12px;font-weight:800}
+.live-dot{width:9px;height:9px;background:#20c77c;border-radius:50%;display:inline-block;box-shadow:0 0 0 5px rgba(32,199,124,.15)}
+.route-panel{padding:18px;background:#fff}.destination{font-size:20px;font-weight:900}.eta{font-size:40px;font-weight:900;line-height:1}
+.nav-overlay{position:absolute;z-index:700;left:12px;right:12px;top:12px;pointer-events:none;display:none}.nav-card{background:#087f78;color:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.24)}.nav-card .nav-main{font-size:22px;font-weight:900;display:flex;align-items:center;gap:12px}.nav-card .nav-arrow{font-size:34px;line-height:1}.nav-card .nav-sub{margin-top:5px;font-size:12px;opacity:.9}.nav-bottom{position:absolute;z-index:700;left:12px;right:12px;bottom:12px;pointer-events:none;display:none}.nav-bottom-card{background:#fff;border-radius:14px;padding:12px 16px;box-shadow:0 8px 24px rgba(0,0,0,.22);display:flex;align-items:center;justify-content:space-between}.nav-bottom-card strong{font-size:28px}.nav-bottom-card .small{font-size:12px;color:#64767d}.follow-on{background:#fff!important}.traffic-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:900;background:#eef8f7;color:#075f61;border:1px solid #cfe7e5}.traffic-dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:#20a66a}.traffic-dot.moderate{background:#e3a21a}.traffic-dot.heavy{background:#d7193f}.amb-nav-marker{width:38px;height:38px;border-radius:50%;background:#1976f3;border:4px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.28);display:grid;place-items:center;color:#fff;font-size:20px;transform-origin:center}.amb-nav-marker span{display:block;line-height:1;transform:translateY(-1px)}.timeline{margin-top:15px}.event{display:flex;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:13px}.event time{color:var(--muted);min-width:55px}
+.profile-chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:8px 12px;font-size:12px;font-weight:800}
+.section-title{display:flex;justify-content:space-between;align-items:center;margin:4px 0 12px}.section-title h2{margin:0}
+.alert{border:2px solid #f0b1bc;background:#fff4f6;border-radius:16px;padding:15px;margin-top:11px}.doctor-line{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}.doctor-line input[type=text],.doctor-line input[type=time]{padding:8px 9px}.identity-note{background:#eef8f7;border:1px solid #cde8e6;border-radius:12px;padding:12px;margin-top:12px}.demo-note{background:#fff8df;border:1px dashed #e2b94f;border-radius:12px;padding:11px;margin-top:10px}
+.footer-note{text-align:center;color:var(--muted);font-size:12px;padding:25px}
+.hidden{display:none!important}
+@media(max-width:900px){.grid,.grid3{grid-template-columns:1fr}.topbar{height:auto;padding:14px 16px;gap:12px}.nav{width:100%;overflow:auto}.nav button{flex:1;white-space:nowrap}.page{padding:15px}#map{height:430px}}
+@media(max-width:560px){.hero{padding:24px}.hero h2{font-size:25px}.auth-card{padding:22px}.otp{gap:5px}.otp input{font-size:18px}.brand small{display:none}.profile-chip{display:none}}
+</style>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0e5a5a">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<script>if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));</script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><div class="brand-icon">🚑</div><div><h1>MediRoute AI</h1><small data-i="tag">Emergency resource coordination</small></div></div>
+  <div class="nav">
+    <button data-role="public" class="active">👤 <span data-i="public">Public</span></button>
+    <button data-role="amb">🚑 <span data-i="amb">Ambulance</span></button>
+    <button data-role="hosp">🏥 <span data-i="hosp">Hospital</span></button><button data-role="admin">🛡️ Admin</button>
+    <button id="lang" class="lang">தமிழ்</button>
+    <span id="profileChip" class="profile-chip hidden"></span>
+  </div>
+</header>
+
+<!-- AUTH -->
+<section id="auth" class="auth-shell">
+  <div class="auth-card">
+    <div class="auth-logo">🚑</div>
+    <h2 id="authTitle">Emergency access</h2>
+    <p id="authSub" class="sub">Sign in to connect patients, ambulances and hospitals.</p>
+    <div class="role-switch" style="grid-template-columns:repeat(4,1fr)">
+      <button data-auth-role="public" class="active">👤 Public</button>
+      <button data-auth-role="amb">🚑 Ambulance</button>
+      <button data-auth-role="hosp">🏥 Hospital</button>
+      <button data-auth-role="admin">🛡️ Admin</button>
+    </div>
+    <div id="authForm"></div>
+    <div id="authMsg"></div>
+  </div>
+</section>
+
+<main class="page hidden" id="app">
+
+<!-- PUBLIC -->
+<section id="publicView" class="view active">
+  <div class="hero">
+    <div class="row between"><div><h2>Emergency care, connected.</h2><p>Find suitable hospitals using specialist availability, emergency capacity, travel time and fresh hospital status.</p></div><span class="badge green">● System online</span></div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="section-title"><h2>👤 Emergency profile</h2><button class="btn" id="logoutPublic">Log out</button></div>
+      <div class="grid3">
+        <div class="stat"><strong id="pubName">—</strong><span>Name</span></div>
+        <div class="stat"><strong id="pubBlood">—</strong><span>Blood group</span></div>
+        <div class="stat"><strong id="pubPhone">—</strong><span>Phone</span></div>
+        <div class="stat"><strong id="pubId">—</strong><span>Emergency profile ID</span></div>
+      </div>
+      <p class="tiny muted" style="margin-bottom:0">Your blood group is stored in your emergency profile. Share the Emergency Profile ID with the ambulance team; only the authorized receiving hospital dashboard receives the blood group in the emergency packet.</p>
+    </div>
+    <div class="card">
+      <h2>Find a suitable hospital</h2>
+      <div class="identity-note">
+        <div class="row between"><div><b>📍 Your live location</b><div id="pubCoords" class="tiny muted">Requesting browser GPS…</div></div><span id="pubGpsBadge" class="badge amber">● GPS starting…</span></div>
+        <div class="tiny muted" style="margin-top:7px">Hospital search uses your current GPS location. There are no fixed pickup-point choices in the public app. Your exact location is used only for the nearby-hospital calculation and is not shown to other public users.</div>
+        <button id="pubRetryGps" class="btn" style="margin-top:10px">📍 Use my current location</button>
+      </div>
+      <div style="margin-top:12px"><label>Emergency type</label><select id="pDept"><option value="general">General emergency</option><option value="cardiology">Cardiology</option><option value="neurology">Neurology</option><option value="trauma">Trauma</option><option value="respiratory">Respiratory</option><option value="obstetrics">Obstetrics</option></select></div>
+      <p class="tiny muted">Public view shows public-safe hospital information only. Internal bed counts, reservations and staff details remain private.</p>
+    </div>
+  </div>
+  <div style="margin-top:20px" class="section-title"><h2>Recommended hospitals</h2><span class="tiny muted">AI-ranked</span></div>
+  <div id="pList"></div>
+  <div id="publicMapCard" class="card map-card public-map-card">
+    <div class="public-map-head"><div class="row between"><div><b id="publicMapTitle">Hospital directions</b><div class="tiny muted" id="publicMapSubtitle">Select a hospital to calculate directions.</div></div><div class="row"><button id="publicCenter" class="btn" type="button">◎ Center</button><button id="publicFullRoute" class="btn" type="button">⤢ Full route</button><button id="publicMapClose" class="btn" type="button">✕ Close</button></div></div></div>
+    <div id="publicMap"></div>
+    <div class="public-route-panel" id="publicRoutePanel"></div>
+  </div>
+</section>
+
+<!-- AMBULANCE -->
+<section id="ambView" class="view">
+  <div class="hero">
+    <div class="row between"><div><h2>Ambulance command screen</h2><p>Live location, hospital allocation, route and real-time rerouting in one place.</p></div><span id="gpsBadge" class="badge amber">● GPS starting…</span></div>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="card" style="margin-bottom:18px">
+        <div class="section-title"><h2>🚑 Report emergency</h2><button class="btn" id="logoutAmb">Log out</button></div>
+        <div class="identity-note">
+          <div class="row between"><div><b>📍 Live ambulance location</b><div id="liveCoords" class="tiny muted">Waiting for GPS…</div></div><span id="gpsState" class="badge amber">GPS starting…</span></div>
+          <div class="tiny muted" style="margin-top:7px">Hospital search uses the ambulance's live GPS coordinates. Live mode ignores demo hospitals. The map follows the ambulance and recalculates the road route as GPS moves.</div>
+          <button id="judgeDemo" class="btn" style="margin-top:10px">🧪 Use Nagercoil judge demo location</button>
+          <div id="demoModeNote" class="demo-note hidden">Judge Demo mode is active. This simulates the ambulance in Nagercoil; it does not change your real GPS.</div>
+        </div>
+        <div style="margin-top:12px"><label>Emergency symptoms</label><textarea id="aSym" rows="3">Patient has chest pain and difficulty breathing</textarea><div class="tiny muted" style="margin-top:5px">Describe the emergency naturally — symptoms, injury, accident or incident. MediRoute accepts free-form descriptions; AI extracts relevant medical information and estimates severity/care capability. It does not make a medical diagnosis.</div></div>
+        <div style="margin-top:10px"><label>Patient Emergency Profile ID <span class="tiny muted">(optional but recommended)</span></label><input id="aPublicId" placeholder="Example: PUB-AB12CD34"><div class="tiny muted" style="margin-top:5px">If the patient registered blood group with MediRoute, enter their profile ID so the authorized hospital can prepare blood/emergency care before arrival.</div></div>
+        <div class="row" style="margin-top:12px">
+          <button id="mic" class="btn">🎤 Speak</button>
+          <button id="go" class="btn primary">Find nearby suitable hospital & start route</button>
+          <label class="row tiny" style="margin:0"><input type="checkbox" id="voiceNav" checked style="width:auto"> Voice announcements</label>
+        </div>
+        <div id="dispatchMsg"></div>
+        <div id="conditionPanel" class="card" style="margin-top:12px;background:#fff8f2;box-shadow:none;border:1px solid #f0d7c5">
+          <b>⚠ Patient condition update</b>
+          <div class="tiny muted" style="margin-top:5px">If the patient deteriorates, report it immediately. MediRoute reassesses from the ambulance's current GPS. It does not diagnose or determine death.</div>
+          <div class="row" style="margin-top:10px;flex-wrap:wrap">
+            <button id="condDeteriorating" class="btn">⚠ Deteriorating</button>
+            <button id="condCritical" class="btn">🔴 Critical now</button>
+            <button id="condStable" class="btn">🟢 Stable</button>
+            <button id="condDeceased" class="btn" style="border-color:#b91c1c;color:#b91c1c">🛑 Deceased — authorized medical staff only</button>
+          </div>
+          <div id="conditionMsg" style="margin-top:8px"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-title"><h2>Trip status</h2><span id="ambStatusBadge" class="badge gray">No active trip</span></div>
+        <div id="tripSummary"><p class="muted">Report an emergency to start the AI hospital allocation.</p></div>
+      </div>
+    </div>
+    <div class="card map-card">
+      <div class="map-head">
+        <div class="row between"><div><b>Live ambulance map</b><div class="tiny muted"><span class="live-dot"></span> GPS updates every 5 seconds · Open-source road routing · traffic layer is demo data</div></div><button id="centerMap" class="btn">◎ Center</button></div>
+      </div>
+      <div id="map">
+        <div id="navOverlay" class="nav-overlay"><div class="nav-card"><div class="nav-main"><span id="navArrow" class="nav-arrow">↑</span><span id="navInstruction">Follow the route to the hospital</span></div><div id="navSub" class="nav-sub">Navigation ready</div></div></div><div id="navBottom" class="nav-bottom"><div class="nav-bottom-card"><div><strong id="navEta">—</strong><div class="small" id="navEtaLabel">ROAD ETA</div></div><div style="text-align:right"><b id="navDistance">—</b><div class="small">to hospital</div></div></div></div>
+      </div>
+      <div class="route-panel" id="routePanel"><div class="muted">Waiting for an emergency request…</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOSPITAL -->
+<section id="hospView" class="view">
+  <div class="hero">
+    <div class="row between"><div><h2>Hospital operations</h2><p>Accept emergencies, manage scarce resources and keep availability fresh for the AI coordinator.</p></div><span class="badge green">● Verified staff</span></div>
+  </div>
+  <div class="card">
+    <div class="row between"><div><h2 id="hName" style="margin:0">Hospital</h2><div id="hIdentity" class="tiny muted"></div></div><span id="hConf" class="badge green"></span><button class="btn" id="logoutHosp">Log out</button></div>
+    <div id="hSource" class="identity-note"></div>
+  </div>
+  <div class="grid" style="margin-top:18px">
+    <div class="card">
+      <h2>Emergency capacity</h2><div id="hCap"></div>
+      <div class="row" style="margin-top:13px">
+        <div><label>Emergency beds available</label><input type="number" id="hBeds" min="0" class="num"></div>
+        <div><label>ICU beds available</label><input type="number" id="hIcu" min="0" class="num"></div>
+        <button id="hSave" class="btn teal" style="margin-top:28px">Update</button>
+      </div>
+      <button id="hPriv" class="btn" style="margin-top:12px;width:100%">🚗 Private-vehicle patient arrived (−1 emergency bed)</button>
+      <div class="card" style="margin-top:14px;background:#fff4f4;border:1px solid #f1cccc;box-shadow:none">
+        <div class="row between"><div><b>🩸 Emergency blood contacts</b><div class="tiny muted" style="margin-top:4px">Find public users who voluntarily allowed authorized hospitals to contact them for an urgent blood-group request.</div></div><button class="btn primary" id="hBloodOpen">🩸 Blood</button></div>
+        <div id="hBloodBox" class="hidden" style="margin-top:12px">
+          <div class="tiny muted" style="margin-bottom:10px">This is an additional contact network, not a blood-stock system. The person's blood group is self-reported. Call and verify before clinical use.</div>
+          <div class="row" style="align-items:end">
+            <div style="flex:1"><label>Which blood group is needed?</label><select id="hBloodGroup"><option value="">Select blood group</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div>
+            <button class="btn primary" id="hFindBlood">Find people</button>
+          </div>
+          <div id="hBloodResults" style="margin-top:12px"><div class="tiny muted">Select a blood group and search.</div></div>
+        </div>
+      </div>
+      <h3 style="margin-top:23px">Specialists & availability</h3><div class="tiny muted">Hospital staff control the doctor name, emergency availability and on-call timing shown to the AI coordinator.</div><div id="hSpec" style="margin-top:8px"></div>
+      <div class="card" style="margin-top:14px;background:#f8fbfb;box-shadow:none">
+        <b>+ Add specialist / department</b>
+        <div class="grid3" style="margin-top:5px">
+          <div><label>Department</label><input id="newDept" placeholder="e.g. nephrology"></div>
+          <div><label>Doctor / specialist</label><input id="newDoctor" placeholder="Dr. Name"></div>
+          <div><label>On-call timing</label><input id="newShift" value="00:00-24:00" placeholder="09:00-17:00"></div>
+        </div>
+        <label class="row tiny" style="margin-top:9px"><input id="newOn" type="checkbox" checked style="width:auto"> Available for emergency requests</label>
+        <button id="hAddSpec" class="btn teal" style="margin-top:8px">Add specialist</button>
+      </div>
+    </div>
+    <div class="card"><h2>Incoming emergencies</h2><div id="hInc"></div></div>
+  </div>
+</section>
+
+<!-- ADMIN -->
+<section id="adminView" class="view">
+  <div class="hero"><div class="row between"><div><h2>Hospital verification console</h2><p>Review Tamil Nadu hospital onboarding applications before they enter the live MediRoute hospital pool.</p></div><span class="badge green">● Admin</span></div></div>
+  <div class="card"><div class="row between"><div><h2 style="margin:0">Tamil Nadu applications</h2><div class="tiny muted">Government registration and licence details are checked here for the hackathon demo. This is not a live government API.</div></div><button class="btn" id="adminRefresh">Refresh</button><button class="btn" id="adminLogout">Log out</button></div></div>
+  <div id="adminPending" class="grid" style="margin-top:18px"></div>
+  <div class="card" style="margin-top:18px"><h2>Processed applications</h2><div id="adminProcessed"></div></div>
+</section>
+
+<div class="footer-note">MediRoute AI • Hackathon prototype • Hospital and government verification data are simulated for demonstration.</div>
+</main>
+
+<script>
+const T={
+en:{tag:"Emergency resource coordination",public:"Public",amb:"Ambulance",hosp:"Hospital",lang:"en-IN",
+heroAmb:"Ambulance command screen",heroAmbSub:"Live location, hospital allocation, route and real-time rerouting in one place.",
+report:"Report emergency",pickup:"Pickup location",symptoms:"Emergency symptoms",speak:"Speak",find:"Find hospital & start route",voice:"Voice announcements",trip:"Trip status",noTrip:"Report an emergency to start the AI hospital allocation.",map:"Live ambulance map",updates:"Location updates every 5 seconds",center:"Center",waiting:"Waiting for an emergency request…",hospitalOps:"Hospital operations",hospitalOpsSub:"Accept emergencies, manage scarce resources and keep availability fresh for the AI coordinator.",capacity:"Emergency capacity",beds:"Emergency beds",icu:"ICU",update:"Update",private:"🚗 Private-vehicle patient arrived (−1 bed)",specialists:"Specialists",incoming:"Incoming emergencies",logout:"Log out",verified:"● Verified staff"},
+ta:{tag:"அவசர வள ஒருங்கிணைப்பு",public:"பொதுமக்கள்",amb:"ஆம்புலன்ஸ்",hosp:"மருத்துவமனை",lang:"ta-IN",
+heroAmb:"ஆம்புலன்ஸ் கட்டுப்பாட்டு திரை",heroAmbSub:"நேரடி இருப்பிடம், மருத்துவமனை ஒதுக்கீடு, வழித்தடம் மற்றும் தானியங்கி மாற்றுவழி.",
+report:"அவசரநிலையை பதிவு செய்க",pickup:"பிக்கப் இடம்",symptoms:"அவசர அறிகுறிகள்",speak:"பேசுக",find:"மருத்துவமனையை கண்டறிந்து வழித்தடத்தை தொடங்கு",voice:"குரல் அறிவிப்புகள்",trip:"பயண நிலை",noTrip:"AI மருத்துவமனை ஒதுக்கீட்டை தொடங்க அவசரநிலையை பதிவு செய்யவும்.",map:"நேரடி ஆம்புலன்ஸ் வரைபடம்",updates:"ஒவ்வொரு 5 விநாடிக்கும் இருப்பிடம் புதுப்பிக்கப்படும்",center:"மையப்படுத்து",waiting:"அவசர கோரிக்கைக்காக காத்திருக்கிறது…",hospitalOps:"மருத்துவமனை செயல்பாடுகள்",hospitalOpsSub:"அவசரநிலைகளை ஏற்று, குறைந்த வளங்களை நிர்வகித்து, AI ஒருங்கிணைப்புக்கான நிலையை புதுப்பித்த நிலையில் வைத்திருங்கள்.",capacity:"அவசர திறன்",beds:"அவசர படுக்கைகள்",icu:"ICU",update:"புதுப்பி",private:"🚗 தனியார் வாகன நோயாளர் வந்தார் (−1 படுக்கை)",specialists:"நிபுணர்கள்",incoming:"வரும் அவசரநிலைகள்",logout:"வெளியேறு",verified:"● சரிபார்க்கப்பட்ட பணியாளர்"}
+};
+let locale=localStorage.getItem("mediroute_locale")||"en", authRole="public", session=null, activeRole="public", map=null, ambMarker=null, hospitalMarker=null, routeLine=null, gpsWatch=null, locationTimer=null, routeTimer=null, spoken=0, HID="H1", lastRouteKey="", nextInstruction="", lastRouteEta=null;
+let publicFollow=false, publicMap=null, publicOriginMarker=null, publicHospitalMarker=null, publicRouteLine=null, publicRouteSeq=0, publicRouteBusy=false;
+let lastRoutedOrigin=null, routeRequestSeq=0, routeBusy=false, followMap=true, ambulanceHeading=null, routeDistanceMeters=null;
+const DEMO_PICKUP_COORDS={Kowdiar:[8.5190,76.9570],Kazhakkoottam:[8.5686,76.8730],"Vizhinjam Road":[8.4560,76.9900],Palayam:[8.5009,76.9430],"Medical College":[8.5240,76.9280],Nagercoil:[8.1833,77.4119],Kanyakumari:[8.0883,77.5385],Madurai:[9.9252,78.1198],Chennai:[13.0827,80.2707]};
+const DEPTS=["general","cardiology","neurology","trauma","respiratory","obstetrics"];
+const $=s=>document.querySelector(s);
+let leafletPromise=null;
+function ensureLeaflet(){
+  if(window.L && typeof window.L.map==="function") return Promise.resolve(window.L);
+  if(leafletPromise) return leafletPromise;
+  leafletPromise=new Promise((resolve,reject)=>{
+    const script=document.createElement("script");
+    script.src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    script.crossOrigin="anonymous";
+    const timer=setTimeout(()=>{script.remove();leafletPromise=null;reject(new Error("Map library could not be loaded. Check internet access to unpkg.com."));},8000);
+    script.onload=()=>{clearTimeout(timer);resolve(window.L)};
+    script.onerror=()=>{clearTimeout(timer);leafletPromise=null;reject(new Error("Map library could not be loaded. Check internet access to unpkg.com."));};
+    document.head.appendChild(script);
+  });
+  return leafletPromise;
+}
+const api=async(path,body)=>{
+  const r=await fetch("/api"+path,body===undefined?{}:{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const data=await r.json(); if(!r.ok) throw new Error(data.detail||"Request failed"); return data;
+};
+const lang=()=>T[locale].lang;
+
+/* Complete bilingual UI layer.
+   Medical entities and routing logic stay language-independent; this layer only
+   localizes user-facing UI text. Dynamic DOM content is handled by the observer. */
+const UI_TA={
+  "MediRoute AI — Emergency Coordination":"MediRoute AI — அவசர ஒருங்கிணைப்பு",
+  "Emergency resource coordination":"அவசர வள ஒருங்கிணைப்பு",
+  "Public":"பொதுமக்கள்","Ambulance":"ஆம்புலன்ஸ்","Hospital":"மருத்துவமனை","🛡️ Admin":"🛡️ நிர்வாகம்",
+  "Emergency access":"அவசர அணுகல்",
+  "Sign in to connect patients, ambulances and hospitals.":"நோயாளிகள், ஆம்புலன்ஸ்கள் மற்றும் மருத்துவமனைகளை இணைக்க உள்நுழையவும்.",
+  "👤 Public":"👤 பொதுமக்கள்","🚑 Ambulance":"🚑 ஆம்புலன்ஸ்","🏥 Hospital":"🏥 மருத்துவமனை","🛡️ Admin":"🛡️ நிர்வாகம்",
+  "Emergency care, connected.":"அவசர சிகிச்சை, ஒருங்கிணைக்கப்பட்டது.",
+  "Find suitable hospitals using specialist availability, emergency capacity, travel time and fresh hospital status.":"நிபுணர் கிடைப்புநிலை, அவசர திறன், பயண நேரம் மற்றும் புதுப்பிக்கப்பட்ட மருத்துவமனை நிலையை பயன்படுத்தி பொருத்தமான மருத்துவமனைகளை கண்டறியவும்.",
+  "● System online":"● அமைப்பு செயல்பாட்டில்",
+  "👤 Emergency profile":"👤 அவசர சுயவிவரம்","Log out":"வெளியேறு","Name":"பெயர்","Blood group":"இரத்த வகை","Phone":"தொலைபேசி","Emergency profile ID":"அவசர சுயவிவர ID",
+  "Your blood group is stored in your emergency profile. Share the Emergency Profile ID with the ambulance team; only the authorized receiving hospital dashboard receives the blood group in the emergency packet.":"உங்கள் இரத்த வகை அவசர சுயவிவரத்தில் சேமிக்கப்படுகிறது. அவசர சுயவிவர ID-ஐ ஆம்புலன்ஸ் குழுவுடன் பகிரவும்; அங்கீகரிக்கப்பட்ட பெறும் மருத்துவமனை டாஷ்போர்டு மட்டுமே அவசர தகவலில் இரத்த வகையைப் பெறும்.",
+  "Find a suitable hospital":"பொருத்தமான மருத்துவமனையை கண்டறியவும்","📍 Your live location":"📍 உங்கள் நேரடி இருப்பிடம்",
+  "Requesting browser GPS…":"உலாவி GPS கோரப்படுகிறது…","● GPS starting…":"● GPS தொடங்குகிறது…",
+  "Hospital search uses your current GPS location. There are no fixed pickup-point choices in the public app. Your exact location is used only for the nearby-hospital calculation and is not shown to other public users.":"மருத்துவமனை தேடல் உங்கள் தற்போதைய GPS இருப்பிடத்தைப் பயன்படுத்துகிறது. பொதுமக்கள் பயன்பாட்டில் நிலையான பிக்கப் இடத் தேர்வுகள் இல்லை. அருகிலுள்ள மருத்துவமனையை கணக்கிட மட்டுமே உங்கள் துல்லியமான இருப்பிடம் பயன்படுத்தப்படுகிறது; அது மற்ற பொதுப் பயனர்களுக்கு காட்டப்படாது.",
+  "📍 Use my current location":"📍 எனது தற்போதைய இருப்பிடத்தைப் பயன்படுத்தவும்","Emergency type":"அவசரநிலை வகை",
+  "Public view shows public-safe hospital information only. Internal bed counts, reservations and staff details remain private.":"பொதுப் பார்வையில் பொதுமக்களுக்கு பாதுகாப்பாக காட்டக்கூடிய மருத்துவமனை தகவல்கள் மட்டுமே தெரியும். உள் படுக்கை எண்ணிக்கை, முன்பதிவுகள் மற்றும் பணியாளர் விவரங்கள் தனிப்பட்டதாக இருக்கும்.",
+  "Recommended hospitals":"பரிந்துரைக்கப்பட்ட மருத்துவமனைகள்","AI-ranked":"AI தரவரிசை",
+  "Ambulance command screen":"ஆம்புலன்ஸ் கட்டுப்பாட்டு திரை","Live location, hospital allocation, route and real-time rerouting in one place.":"நேரடி இருப்பிடம், மருத்துவமனை ஒதுக்கீடு, வழித்தடம் மற்றும் நேரடி மாற்றுவழி அனைத்தும் ஒரே இடத்தில்.",
+  "🚑 Report emergency":"🚑 அவசரநிலையை பதிவு செய்க","📍 Live ambulance location":"📍 நேரடி ஆம்புலன்ஸ் இருப்பிடம்","Waiting for GPS…":"GPS-க்காக காத்திருக்கிறது…","GPS starting…":"GPS தொடங்குகிறது…",
+  "Hospital search uses the ambulance's live GPS coordinates. Live mode ignores demo hospitals. The map follows the ambulance and recalculates the road route as GPS moves.":"மருத்துவமனை தேடல் ஆம்புலன்ஸின் நேரடி GPS ஒருங்கிணைப்புகளைப் பயன்படுத்துகிறது. நேரடி முறையில் டெமோ மருத்துவமனைகள் தவிர்க்கப்படுகின்றன. வரைபடம் ஆம்புலன்ஸைப் பின்தொடர்ந்து GPS நகரும் போது சாலை வழித்தடத்தை மீண்டும் கணக்கிடுகிறது.",
+  "🧪 Use Nagercoil judge demo location":"🧪 நாகர்கோவில் நீதிபதி டெமோ இருப்பிடத்தைப் பயன்படுத்தவும்","📍 Return to live GPS":"📍 நேரடி GPS-க்கு திரும்பவும்",
+  "Judge Demo mode is active. This simulates the ambulance in Nagercoil; it does not change your real GPS.":"நீதிபதி டெமோ முறை செயல்பாட்டில் உள்ளது. இது நாகர்கோவிலில் ஆம்புலன்ஸை உருவகப்படுத்துகிறது; உங்கள் உண்மையான GPS-ஐ மாற்றாது.",
+  "Emergency symptoms":"அவசர அறிகுறிகள்","Patient has chest pain and difficulty breathing":"நோயாளிக்கு நெஞ்சு வலி மற்றும் மூச்சுத்திணறல் உள்ளது",
+  "Describe the emergency naturally — symptoms, injury, accident or incident. MediRoute accepts free-form descriptions; AI extracts relevant medical information and estimates severity/care capability. It does not make a medical diagnosis.":"அவசரநிலையை இயல்பாக விவரிக்கவும் — அறிகுறிகள், காயம், விபத்து அல்லது சம்பவம். MediRoute சுதந்திரமான விளக்கங்களை ஏற்கிறது; AI தொடர்புடைய மருத்துவ தகவல்களைப் பிரித்தெடுத்து தீவிரம் மற்றும் சிகிச்சைத் திறனை மதிப்பிடுகிறது. இது மருத்துவ நோயறிதலை செய்யாது.",
+  "Patient Emergency Profile ID":"நோயாளியின் அவசர சுயவிவர ID","(optional but recommended)":"(விருப்பமானது, ஆனால் பரிந்துரைக்கப்படுகிறது)",
+  "If the patient registered blood group with MediRoute, enter their profile ID so the authorized hospital can prepare blood/emergency care before arrival.":"நோயாளி MediRoute-ல் இரத்த வகையை பதிவு செய்திருந்தால், அவர்/அவர்களின் சுயவிவர ID-ஐ உள்ளிடவும்; அங்கீகரிக்கப்பட்ட மருத்துவமனை வருகைக்கு முன் அவசர சிகிச்சையைத் தயாரிக்க முடியும்.",
+  "🎤 Speak":"🎤 பேசுக","Find nearby suitable hospital & start route":"அருகிலுள்ள பொருத்தமான மருத்துவமனையை கண்டறிந்து வழித்தடத்தை தொடங்கு","Voice announcements":"குரல் அறிவிப்புகள்",
+  "⚠ Patient condition update":"⚠ நோயாளியின் நிலை புதுப்பிப்பு","⚠ Deteriorating":"⚠ நிலை மோசமடைகிறது","🔴 Critical now":"🔴 இப்போது மிக அவசரம்","🟢 Stable":"🟢 நிலையான நிலை","🛑 Deceased — authorized medical staff only":"🛑 மரணம் — அங்கீகரிக்கப்பட்ட மருத்துவ பணியாளர்கள் மட்டுமே",
+  "If the patient deteriorates, report it immediately. MediRoute reassesses from the ambulance's current GPS. It does not diagnose or determine death.":"நோயாளியின் நிலை மோசமடைந்தால் உடனடியாக தெரிவிக்கவும். MediRoute ஆம்புலன்ஸின் தற்போதைய GPS இருப்பிடத்திலிருந்து மீண்டும் மதிப்பீடு செய்கிறது. இது நோயறிதல் செய்யாது அல்லது மரணத்தை தீர்மானிக்காது.",
+  "Trip status":"பயண நிலை","No active trip":"செயலில் பயணம் இல்லை","Report an emergency to start the AI hospital allocation.":"AI மருத்துவமனை ஒதுக்கீட்டைத் தொடங்க அவசரநிலையை பதிவு செய்யவும்.",
+  "Live ambulance map":"நேரடி ஆம்புலன்ஸ் வரைபடம்","◎ Center":"◎ மையப்படுத்து","Follow the route to the hospital":"மருத்துவமனைக்கான வழித்தடத்தைப் பின்தொடரவும்","Navigation ready":"வழிசெலுத்தல் தயாராக உள்ளது","ROAD ETA":"சாலை ETA","to hospital":"மருத்துவமனைக்கு","Waiting for an emergency request…":"அவசர கோரிக்கைக்காக காத்திருக்கிறது…","HOSPITAL":"மருத்துவமனை",
+  "Hospital operations":"மருத்துவமனை செயல்பாடுகள்","Accept emergencies, manage scarce resources and keep availability fresh for the AI coordinator.":"அவசரநிலைகளை ஏற்று, குறைந்த வளங்களை நிர்வகித்து, AI ஒருங்கிணைப்புக்கான கிடைப்புநிலையை புதுப்பித்த நிலையில் வைத்திருக்கவும்.","● Verified staff":"● சரிபார்க்கப்பட்ட பணியாளர்","Emergency capacity":"அவசர திறன்","Emergency beds available":"கிடைக்கும் அவசர படுக்கைகள்","ICU beds available":"கிடைக்கும் ICU படுக்கைகள்","Update":"புதுப்பி","🚗 Private-vehicle patient arrived (−1 emergency bed)":"🚗 தனியார் வாகன நோயாளர் வந்தார் (−1 அவசர படுக்கை)",
+  "🩸 Emergency blood contacts":"🩸 அவசர இரத்த தொடர்புகள்","Find public users who voluntarily allowed authorized hospitals to contact them for an urgent blood-group request.":"அவசர இரத்த வகை தேவைக்காக அங்கீகரிக்கப்பட்ட மருத்துவமனைகள் தொடர்பு கொள்ள தன்னார்வமாக அனுமதித்த பொதுப் பயனர்களைக் கண்டறியவும்.","🩸 Blood":"🩸 இரத்தம்","This is an additional contact network, not a blood-stock system. The person's blood group is self-reported. Call and verify before clinical use.":"இது கூடுதல் தொடர்பு வலைப்பின்னல்; இரத்த கையிருப்பு அமைப்பு அல்ல. நபர் தானாக தெரிவித்த இரத்த வகை இது. மருத்துவ பயன்பாட்டிற்கு முன் அழைத்து சரிபார்க்கவும்.",
+  "Which blood group is needed?":"எந்த இரத்த வகை தேவை?","Select blood group":"இரத்த வகையைத் தேர்ந்தெடுக்கவும்","Find people":"நபர்களைக் கண்டறி","Select a blood group and search.":"இரத்த வகையைத் தேர்ந்தெடுத்து தேடவும்.",
+  "Specialists & availability":"நிபுணர்கள் மற்றும் கிடைப்புநிலை","Hospital staff control the doctor name, emergency availability and on-call timing shown to the AI coordinator.":"AI ஒருங்கிணைப்பாளருக்குக் காட்டப்படும் மருத்துவர் பெயர், அவசர கிடைப்புநிலை மற்றும் அழைப்புப் பணிநேரத்தை மருத்துவமனை பணியாளர்கள் நிர்வகிக்கின்றனர்.","+ Add specialist / department":"+ நிபுணர் / துறையைச் சேர்க்கவும்","Department":"துறை","Doctor / specialist":"மருத்துவர் / நிபுணர்","On-call timing":"அழைப்புப் பணி நேரம்","Available for emergency requests":"அவசர கோரிக்கைகளுக்கு கிடைக்கும்","Add specialist":"நிபுணரைச் சேர்க்கவும்","Incoming emergencies":"வரும் அவசரநிலைகள்",
+  "Hospital verification console":"மருத்துவமனை சரிபார்ப்பு கட்டுப்பாட்டு திரை","Review Tamil Nadu hospital onboarding applications before they enter the live MediRoute hospital pool.":"மருத்துவமனைகள் நேரடி MediRoute பட்டியலில் சேர்வதற்கு முன் தமிழ்நாடு மருத்துவமனை பதிவு விண்ணப்பங்களை மதிப்பாய்வு செய்யவும்.","● Admin":"● நிர்வாகம்","Tamil Nadu applications":"தமிழ்நாடு விண்ணப்பங்கள்","Government registration and licence details are checked here for the hackathon demo. This is not a live government API.":"ஹேக்கத்தான் டெமோவிற்காக அரசு பதிவு மற்றும் உரிம விவரங்கள் இங்கு சரிபார்க்கப்படுகின்றன. இது நேரடி அரசு API அல்ல.","Refresh":"புதுப்பி","Processed applications":"செயலாக்கப்பட்ட விண்ணப்பங்கள்",
+  "MediRoute AI • Hackathon prototype • Hospital and government verification data are simulated for demonstration.":"MediRoute AI • ஹேக்கத்தான் முன்மாதிரி • மருத்துவமனை மற்றும் அரசு சரிபார்ப்பு தரவுகள் டெமோவிற்காக உருவகப்படுத்தப்பட்டவை.",
+  "AUTH":"அங்கீகாரம்","PUBLIC":"பொதுமக்கள்","AMBULANCE":"ஆம்புலன்ஸ்","ADMIN":"நிர்வாகம்",
+  "General emergency":"பொதுவான அவசரநிலை","Cardiology":"இதயவியல்","Neurology":"நரம்பியல்","Trauma":"காயச்சிகிச்சை","Respiratory":"சுவாசம்","Obstetrics":"மகப்பேறு",
+  "General Medicine Team":"பொது மருத்துவக் குழு","Emergency Medicine Team":"அவசர மருத்துவக் குழு","Suitable":"பொருத்தமானது","Not currently suitable":"தற்போது பொருத்தமில்லை","Data confidence":"தரவு நம்பகத்தன்மை","Updated":"புதுப்பிக்கப்பட்டது","ago":"முன்பு",
+  "Required resources:":"தேவையான வளங்கள்:","Standard emergency care":"நிலையான அவசர சிகிச்சை","care matching":"சிகிச்சை பொருத்தம்","Accept & prepare":"ஏற்று மற்றும் தயார்செய்","Reject & reroute":"நிராகரி மற்றும் மாற்றுவழி","No incoming emergencies.":"வரும் அவசரநிலைகள் இல்லை.",
+  "Authorized emergency profile":"அங்கீகரிக்கப்பட்ட அவசர சுயவிவரம்","Patient:":"நோயாளர்:","Profile:":"சுயவிவரம்:","Self-reported blood group. Verify with the patient before clinical use.":"நபர் தானாக தெரிவித்த இரத்த வகை. மருத்துவ பயன்பாட்டிற்கு முன் நோயாளியிடம் சரிபார்க்கவும்.","Priority":"முன்னுரிமை","ETA":"ETA","Phone ending":"தொலைபேசி முடிவு","No opted-in public contacts found for":"தேர்ந்தெடுத்த இரத்த வகைக்கு அனுமதி அளித்த பொதுத் தொடர்புகள் எதுவும் இல்லை:","right now":"தற்போது","opted-in public contact":"அனுமதி அளித்த பொதுத் தொடர்பு","opted-in public contacts":"அனுமதி அளித்த பொதுத் தொடர்புகள்","Blood group:":"இரத்த வகை:","Profile:":"சுயவிவரம்:",
+  "Registration source:":"பதிவு மூலம்:","Hospital operational data":"மருத்துவமனை செயல்பாட்டு தரவு","Synthetic hackathon hospital data — capacity and specialist availability are simulated.":"ஹேக்கத்தான் மருத்துவமனை உருவக தரவு — திறன் மற்றும் நிபுணர் கிடைப்புநிலை உருவகப்படுத்தப்பட்டவை.","Hospital account locked to this facility.":"மருத்துவமனை கணக்கு இந்த நிலையத்துடன் இணைக்கப்பட்டுள்ளது.","Registration:":"பதிவு:","Free emergency beds":"இலவச அவசர படுக்கைகள்","Temporarily reserved":"தற்காலிகமாக ஒதுக்கப்பட்டது","ICU beds":"ICU படுக்கைகள்",
+  "Doctor name":"மருத்துவர் பெயர்","Save":"சேமி","No hospital":"மருத்துவமனை இல்லை","General Emergency":"பொதுவான அவசரநிலை"
+};
+UI_TA["Hospital directions"]="மருத்துவமனை வழிகாட்டுதல்";
+UI_TA["From your current GPS location"]="உங்கள் தற்போதைய GPS இருப்பிடத்திலிருந்து";
+UI_TA["Select a hospital to calculate directions."]="வழிகாட்டுதலை கணக்கிட மருத்துவமனையைத் தேர்ந்தெடுக்கவும்.";
+UI_TA["Directions"]="வழிகாட்டுதல்";
+UI_TA["Your location"]="உங்கள் இருப்பிடம்";
+UI_TA["Hospital"]="மருத்துவமனை";
+UI_TA["ROAD ETA"]="சாலை ETA";
+UI_TA["road distance"]="சாலை தூரம்";
+UI_TA["Calculating road route…"]="சாலை வழித்தடத்தை கணக்கிடுகிறது…";
+UI_TA["Route unavailable"]="வழித்தடம் கிடைக்கவில்லை";
+UI_TA["Unable to calculate a road route."]="சாலை வழித்தடத்தை கணக்கிட முடியவில்லை.";
+const UI_EN=Object.fromEntries(Object.entries(UI_TA).map(([en,ta])=>[ta,en]));
+const uiOriginal=new WeakMap();
+function localizeString(raw){
+  if(locale!=="ta") return raw;
+  let s=raw;
+  const exact=UI_TA[s.trim()]; if(exact!==undefined && s===s.trim()) return exact;
+  s=s.replace(/\bData confidence (\d+)%/g,"தரவு நம்பகத்தன்மை $1%");
+  s=s.replace(/\bUpdated (\d+)s ago\b/g,"$1 விநாடிகளுக்கு முன் புதுப்பிக்கப்பட்டது");
+  s=s.replace(/\b(\d+(?:\.\d+)?) km · (\d+) min\b/g,"$1 கிமீ · $2 நிமிடம்");
+  s=s.replace(/\bPriority (\d+)\b/g,"முன்னுரிமை $1");
+  s=s.replace(/\bETA (\d+) min\b/g,"ETA $1 நிமிடம்");
+  s=s.replace(/\bGeneral Medicine Team\b/g,"பொது மருத்துவக் குழு").replace(/\bEmergency Medicine Team\b/g,"அவசர மருத்துவக் குழு");
+  s=s.replace(/\bSuitable\b/g,"பொருத்தமானது").replace(/\bNot currently suitable\b/g,"தற்போது பொருத்தமில்லை");
+  s=s.replace(/\bStandard emergency care\b/g,"நிலையான அவசர சிகிச்சை");
+  s=s.replace(/\bRequired resources:\b/g,"தேவையான வளங்கள்:");
+  s=s.replace(/\bAccept & prepare\b/g,"ஏற்று மற்றும் தயார்செய்").replace(/\bReject & reroute\b/g,"நிராகரி மற்றும் மாற்றுவழி");
+  s=s.replace(/\bNo incoming emergencies\.\b/g,"வரும் அவசரநிலைகள் இல்லை.");
+  return s;
+}
+function localizeElement(el){
+  if(!el||el.nodeType!==1)return;
+  ["placeholder","title","aria-label"].forEach(a=>{
+    if(el.hasAttribute(a)){
+      if(!uiOriginal.has(el.getAttributeNode(a))) uiOriginal.set(el.getAttributeNode(a),el.getAttribute(a));
+      const orig=uiOriginal.get(el.getAttributeNode(a));
+      el.setAttribute(a,locale==="ta"?localizeString(orig):(UI_EN[orig]||orig));
+    }
+  });
+  const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);
+  const nodes=[]; while(walker.nextNode())nodes.push(walker.currentNode);
+  nodes.forEach(n=>{
+    if(!n.nodeValue.trim())return;
+    if(!uiOriginal.has(n))uiOriginal.set(n,n.nodeValue);
+    const orig=uiOriginal.get(n);
+    n.nodeValue=locale==="ta"?localizeString(orig):(UI_EN[orig]||orig);
+  });
+}
+function localizeWholeApp(){localizeElement(document.body)}
+const uiObserver=new MutationObserver(ms=>{
+  for(const m of ms){
+    if(m.type!=="childList") continue;
+    m.addedNodes.forEach(n=>{if(n.nodeType===1)localizeElement(n)});
+  }
+});
+uiObserver.observe(document.body,{subtree:true,childList:true});
+
+function applyLocale(){
+  localizeWholeApp();
+  const t=T[locale];
+  document.documentElement.lang=locale;
+  document.querySelectorAll('[data-i="tag"]').forEach(e=>e.textContent=t.tag);
+  document.querySelectorAll('[data-i="public"]').forEach(e=>e.textContent=t.public);
+  document.querySelectorAll('[data-i="amb"]').forEach(e=>e.textContent=t.amb);
+  document.querySelectorAll('[data-i="hosp"]').forEach(e=>e.textContent=t.hosp);
+  const set=(sel,txt)=>{const e=$(sel);if(e)e.textContent=txt};
+  set('#ambView .hero h2',t.heroAmb);set('#ambView .hero p',t.heroAmbSub);set('#ambView .hero .badge',locale==='ta'?'● GPS நேரலை':'● GPS live');
+  set('#ambView > .grid > div:first-child > .card:first-child .section-title h2',`🚑 ${t.report}`);set('#logoutAmb',t.logout);
+  const labels=[...document.querySelectorAll('#ambView label')]; if(labels[0])labels[0].textContent=t.symptoms;
+  set('#mic',`🎤 ${t.speak}`);set('#go',t.find);const vl=$('#voiceNav');if(vl&&vl.parentElement)vl.parentElement.lastChild.textContent=' '+t.voice;
+  set('#ambView > .grid > div:first-child > .card:nth-child(2) .section-title h2',t.trip);set('#map + .route-panel .muted',t.waiting);set('#ambView .map-head b',t.map);set('#ambView .map-head .tiny.muted',`● ${t.updates}`);set('#centerMap',`◎ ${t.center}`);
+  set('#hospView .hero h2',t.hospitalOps);set('#hospView .hero p',t.hospitalOpsSub);set('#hospView .hero .badge',t.verified);set('#logoutHosp',t.logout);
+  const h2s=document.querySelectorAll('#hospView h2'); if(h2s[1])h2s[1].textContent=t.capacity; if(h2s[2])h2s[2].textContent=t.incoming;
+  const h3=document.querySelector('#hospView h3');if(h3)h3.textContent=t.specialists;
+  const hlabels=document.querySelectorAll('#hospView label');if(hlabels[0])hlabels[0].textContent=t.beds;if(hlabels[1])hlabels[1].textContent=t.icu;
+  set('#hSave',t.update);set('#hPriv',t.private);
+  localizeWholeApp();
+}
+
+let roleSessions={};
+function loadRoleSessions(){
+  try{roleSessions=JSON.parse(localStorage.getItem("mediroute_role_sessions")||"{}");}catch(e){roleSessions={};}
+}
+function saveRoleSession(role,value){
+  roleSessions[role]=value;
+  localStorage.setItem("mediroute_role_sessions",JSON.stringify(roleSessions));
+}
+function syncCurrentProfile(){
+  if(!session)return;
+  const label=activeRole==="amb"?"🚑 "+(session.driver||session.id):activeRole==="hosp"?"🏥 "+session.name:activeRole==="admin"?"🛡️ Admin":"👤 "+session.name;
+  $("#profileChip").textContent=label;
+  $("#profileChip").classList.remove("hidden");
+}
+function setMsg(el,msg,type="error"){el.innerHTML=msg?`<div class="${type}">${msg}</div>`:"";}
+function rolesForSession(){
+  if(!session)return [];
+  if(Array.isArray(session.roles)&&session.roles.length)return session.roles;
+  if(session.role==="amb")return ["public","amb"];
+  if(session.role==="hosp")return ["hosp"];
+  if(session.role==="admin")return ["admin"];
+  return ["public"];
+}
+function canAccess(role){return rolesForSession().includes(role)}
+function setView(role){
+  if(!canAccess(role)){
+    const savedRole=roleSessions[role];
+    if(savedRole){
+      session=savedRole;
+    }else{
+      authRole=role;
+      $("#app").classList.add("hidden");$("#auth").classList.remove("hidden");renderAuth();return;
+    }
+  }
+  const previous=activeRole;
+  activeRole=role;
+  if(session){session.activeRole=role;saveRoleSession(role,session);}
+  document.querySelectorAll(".nav button[data-role]").forEach(b=>b.classList.toggle("active",b.dataset.role===role));
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  const id=role==="public"?"publicView":role==="amb"?"ambView":role==="hosp"?"hospView":"adminView"; $("#"+id).classList.add("active");
+  syncCurrentProfile();
+  if(previous==="amb" && role!=="amb") stopGPS();
+  if(role==="amb"){initMap();startGPS();amb();window.setTimeout(()=>map&&map.invalidateSize(true),80)}
+  if(role==="public")refreshPublic();
+  if(role==="hosp")hosp();
+  if(role==="admin")adminDashboard();
+}
+function showApp(role){
+  if(!session)return;
+  activeRole=role;
+  if(role==="public") startPublicGPS();
+  $("#auth").classList.add("hidden");$("#app").classList.remove("hidden");
+  saveRoleSession(role,session);
+  if(Array.isArray(session.roles)){
+    session.roles.forEach(r=>saveRoleSession(r,session));
+  }
+  setView(role);
+}
+function logout(){
+  stopPublicGPS();
+  session=null;activeRole="public";roleSessions={};
+  localStorage.removeItem("mediroute_session");
+  localStorage.removeItem("mediroute_role_sessions");
+  stopGPS();
+  $("#app").classList.add("hidden");$("#auth").classList.remove("hidden");$("#profileChip").classList.add("hidden");renderAuth();
+}
+document.querySelectorAll(".nav button[data-role]").forEach(b=>b.onclick=()=>{
+  const requested=b.dataset.role;
+  authRole=requested;
+  if(roleSessions[requested]){session=roleSessions[requested];setView(requested);$("#auth").classList.add("hidden");$("#app").classList.remove("hidden");if(requested==="public")startPublicGPS();return}
+  if(session && canAccess(requested)){setView(requested);if(requested==="public")startPublicGPS();return}
+  $("#app").classList.add("hidden");$("#auth").classList.remove("hidden");renderAuth();
+});
+$("#lang").onclick=()=>{locale=locale==="en"?"ta":"en";localStorage.setItem("mediroute_locale",locale);$("#lang").textContent=locale==="en"?"தமிழ்":"English";applyLocale();renderAuth();if(session){refreshPublic();hosp();amb()}};
+
+document.querySelectorAll("[data-auth-role]").forEach(b=>b.onclick=()=>{authRole=b.dataset.authRole;document.querySelectorAll("[data-auth-role]").forEach(x=>x.classList.toggle("active",x===b));renderAuth()});
+
+function renderAuth(){
+  document.querySelectorAll("[data-auth-role]").forEach(b=>b.classList.toggle("active",b.dataset.authRole===authRole));
+  const title=authRole==="public"?"Public emergency access":authRole==="amb"?"Ambulance secure login":authRole==="hosp"?"Hospital staff login":"Admin verification console";
+  const sub=authRole==="public"?"Create your emergency profile and verify your phone with OTP.":authRole==="amb"?"Verify ambulance, driver and licence details before accessing live routing.":authRole==="hosp"?"Verify an approved hospital and authorized staff account.":"Review and approve Tamil Nadu hospital onboarding applications.";
+  $("#authTitle").textContent=title;$("#authSub").textContent=sub;$("#authMsg").innerHTML="";
+  if(authRole==="public")$("#authForm").innerHTML=`
+    <label>Full name</label><input id="loginName" placeholder="Enter your full name">
+    <label>Phone number</label><input id="loginPhone" inputmode="numeric" placeholder="+91 98765 43210">
+    <label>Blood group</label><select id="loginBlood"><option value="">Select blood group</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option><option>Unknown</option></select>
+    <label class="row tiny" style="margin-top:12px"><input type="checkbox" id="bloodContactConsent" checked style="width:auto"> Allow authorized hospitals to contact me by phone if my blood group is needed in an emergency</label>
+    <div class="tiny muted" style="margin-top:6px">Your blood group is self-reported, not medically verified by MediRoute. Hospitals must call and verify before relying on it.</div>
+    <button class="btn teal" id="sendPublicOtp" style="width:100%;margin-top:18px">Send OTP</button>
+    <div id="otpBox" class="hidden"></div>`;
+  if(authRole==="amb")$("#authForm").innerHTML=`
+    <label>Vehicle registration number</label><input id="loginReg" value="KL01AB1234">
+    <label>Driver name</label><input id="loginDriver" value="Arun Kumar">
+    <label>Commercial driving licence number</label><input id="loginLicense" value="KL-LIC-1001">
+    <label>EMS / hospital affiliation</label><input id="loginAffiliation" value="City General Hospital EMS">
+    <label>Ambulance authorization / permit ID</label><input id="loginAuthorization" value="AMB-AUTH-001">
+    <label>Registered phone number</label><input id="loginPhone" value="9876543210" inputmode="numeric">
+    <button class="btn teal" id="sendAmbOtp" style="width:100%;margin-top:18px">Verify details & send OTP</button>
+    <div id="otpBox" class="hidden"></div>`;
+  if(authRole==="hosp")$("#authForm").innerHTML=`
+    <label>MediRoute hospital registration ID</label><input id="loginHReg" value="HOSP-TN-001"><div class="tiny muted">Use the MediRoute ID shown by Admin after approval (government registration number is also accepted).</div>
+    <label>Authorized staff name</label><input id="loginStaff" value="Dr. Tamil">
+    <label>Authorized staff ID</label><input id="loginStaffId" value="TN-STAFF-001">
+    <label>Staff phone number</label><input id="loginPhone" value="9876543230" inputmode="numeric">
+    <button class="btn teal" id="sendHospOtp" style="width:100%;margin-top:18px">Verify hospital & send OTP</button>
+    <button class="btn" id="openHospitalRegister" style="width:100%;margin-top:9px">➕ Register a Tamil Nadu hospital</button>
+    <div id="otpBox" class="hidden"></div>`;
+  if(authRole==="admin")$("#authForm").innerHTML=`
+    <label>Admin username</label><input id="adminUser" value="admin">
+    <label>Admin password</label><input id="adminPass" type="password" value="admin123">
+    <button class="btn teal" id="adminLoginBtn" style="width:100%;margin-top:18px">Open verification console</button>
+    <div class="demo-code">Demo admin: <b>admin</b> / <b>admin123</b></div>`;
+  if($("#sendPublicOtp"))$("#sendPublicOtp").onclick=sendPublicOtp;
+  if($("#sendAmbOtp"))$("#sendAmbOtp").onclick=sendAmbOtp;
+  if($("#sendHospOtp"))$("#sendHospOtp").onclick=sendHospOtp;
+  if($("#openHospitalRegister"))$("#openHospitalRegister").onclick=renderHospitalRegister;
+  if($("#adminLoginBtn"))$("#adminLoginBtn").onclick=adminLogin;
+}
+function otpUI(kind,phone,meta,demo){
+  const box=$("#otpBox");box.classList.remove("hidden");
+  const demoHtml=demo?`<div class="demo-code">Demo mode OTP: <b>${demo}</b><br><span class="tiny">For real SMS delivery, configure Twilio in the backend environment.</span></div>`:`<div class="success">✓ OTP sent to the registered mobile number.</div>`;
+  box.innerHTML=`<div style="margin-top:17px"><label>Enter 6-digit OTP</label><div class="otp">${[1,2,3,4,5,6].map(i=>`<input maxlength="1" inputmode="numeric" id="o${i}">`).join("")}</div><button class="btn primary" id="verifyOtp" style="width:100%;margin-top:12px">Verify & continue</button>${demoHtml}</div>`;
+  [...document.querySelectorAll(".otp input")].forEach((x,i)=>x.oninput=()=>{if(x.value && i<5)document.querySelectorAll(".otp input")[i+1].focus()});
+  $("#verifyOtp").onclick=async()=>{
+    const otp=[1,2,3,4,5,6].map(i=>$("#o"+i).value).join("");
+    try{
+      let d;
+      if(kind==="public")d=await api("/auth/public/verify-otp",{phone,otp});
+      if(kind==="amb")d=await api("/auth/ambulance/verify-otp",{reg_id:meta.reg_id,phone,otp});
+      if(kind==="hosp")d=await api("/auth/hospital/verify-otp",{registration_id:meta.registration_id,phone,otp});
+      session=kind==="public"?{...d.user,roles:["public"],activeRole:"public"}:kind==="amb"?{...d.ambulance,role:"amb",roles:["public","amb"],activeRole:"amb"}:{...d.hospital,role:"hosp",roles:["hosp"],activeRole:"hosp"};
+      activeRole=session.activeRole||(kind==="public"?"public":kind==="amb"?"amb":"hosp");
+      session.activeRole=activeRole;
+      localStorage.setItem("mediroute_session",JSON.stringify(session));
+      saveRoleSession(kind==="public"?"public":kind==="amb"?"amb":"hosp",session);
+      if(kind==="amb")saveRoleSession("public",session);
+      showApp(activeRole);
+    }catch(e){setMsg($("#authMsg"),"❌ "+e.message)}
+  };
+}
+async function sendPublicOtp(){
+  try{const d=await api("/auth/public/request-otp",{name:$("#loginName").value,phone:$("#loginPhone").value,blood_group:$("#loginBlood").value,blood_contact_consent:$("#bloodContactConsent").checked});otpUI("public",$("#loginPhone").value,{name:$("#loginName").value},d.demo_otp);setMsg($("#authMsg"),"✓ Phone verified for OTP delivery. Enter the OTP to continue.","success")}catch(e){setMsg($("#authMsg"),"❌ "+e.message)}
+}
+async function sendAmbOtp(){
+  try{const meta={reg_id:$("#loginReg").value};const d=await api("/auth/ambulance/request-otp",{reg_id:meta.reg_id,driver_name:$("#loginDriver").value,license_number:$("#loginLicense").value,affiliation:$("#loginAffiliation").value,authorization_id:$("#loginAuthorization").value,phone:$("#loginPhone").value});otpUI("amb",$("#loginPhone").value,meta,d.demo_otp);setMsg($("#authMsg"),"✓ Vehicle, driver, licence, affiliation and authorization verified against the demo registry.","success")}catch(e){setMsg($("#authMsg"),"❌ "+e.message)}
+}
+async function sendHospOtp(){
+  try{const meta={registration_id:$("#loginHReg").value};const d=await api("/auth/hospital/request-otp",{registration_id:meta.registration_id,staff_name:$("#loginStaff").value,staff_id:$("#loginStaffId").value,phone:$("#loginPhone").value});otpUI("hosp",$("#loginPhone").value,meta,d.demo_otp);setMsg($("#authMsg"),"✓ Hospital registration, authorized staff, staff ID and phone verified. Enter the OTP to continue.","success")}catch(e){setMsg($("#authMsg"),"❌ "+e.message)}
+}
+async function adminLogin(){
+  try{const d=await api("/admin/login",{username:$("#adminUser").value,password:$("#adminPass").value});session={role:"admin",username:d.admin.username,roles:["admin"],activeRole:"admin"};localStorage.setItem("mediroute_session",JSON.stringify(session));showApp("admin")}catch(e){setMsg($("#authMsg"),"❌ "+e.message)}
+}
+function renderHospitalRegister(){
+  authRole="hosp";
+  $("#authTitle").textContent="Register Tamil Nadu hospital";
+  $("#authSub").textContent="Submit hospital, government registration and authorized staff details for admin verification.";
+  $("#authMsg").innerHTML="";
+  $("#authForm").innerHTML=`
+    <label>Hospital name *</label><input id="regHName" placeholder="ABC Multispeciality Hospital">
+    <label>State *</label><input value="Tamil Nadu" disabled>
+    <label>District *</label><input id="regDistrict" placeholder="Kanyakumari / Chennai / Coimbatore">
+    <label>Hospital address *</label><textarea id="regAddress" rows="2" placeholder="Full hospital address"></textarea>
+    <label>Tamil Nadu TNCERA registration number *</label><div class="row"><input id="regGov" placeholder="Example: CHENALL20260040514"><button class="btn" id="lookupTN" type="button">🔎 Check Gazette</button></div><div id="tnRegistryResult" class="tiny muted" style="margin-top:8px">Enter the exact TNCERA registration number and check the official Gazette snapshot before submitting.</div>
+    <label>Hospital licence / authorization no. *</label><input id="regLicence" placeholder="Licence / authorization number">
+    <div class="grid3"><div><label>Latitude *</label><input id="regLat" type="number" step="any" placeholder="8.18"></div><div><label>Longitude *</label><input id="regLon" type="number" step="any" placeholder="77.41"></div><div><label>Emergency beds</label><input id="regBeds" type="number" min="0" value="2"></div></div>
+    <label>ICU beds</label><input id="regIcu" type="number" min="0" value="1">
+    <label>Available departments</label><div class="row" id="regDepts">${["general","cardiology","neurology","trauma","respiratory","obstetrics"].map(d=>`<label class="badge gray" style="margin:0"><input type="checkbox" value="${d}" style="width:auto" ${d==="general"?"checked":""}> ${d}</label>`).join("")}</div>
+    <label>Authorized staff name *</label><input id="regStaff" placeholder="Dr. Kumar">
+    <label>Authorized staff ID *</label><input id="regStaffId" placeholder="TN-STAFF-001">
+    <label>Official staff/hospital phone *</label><input id="regPhone" inputmode="numeric" placeholder="9876543210">
+    <label>Hospital email</label><input id="regEmail" type="email" placeholder="admin@hospital.in">
+    <button class="btn teal" id="submitHospitalReg" style="width:100%;margin-top:18px">Submit for admin verification</button>
+    <button class="btn" id="backHospitalLogin" style="width:100%;margin-top:9px">← Back to hospital login</button>`;
+  $("#lookupTN").onclick=lookupTNRegistry;$("#submitHospitalReg").onclick=submitHospitalRegistration;$("#backHospitalLogin").onclick=renderAuth;
+}
+async function lookupTNRegistry(){
+  const reg=(($("#regGov")&&$("#regGov").value)||"").trim();
+  if(!reg){setMsg($("#authMsg"),"❌ Enter the TNCERA registration number first.");return false}
+  try{
+    const d=await api("/tn-registry/lookup?registration_no="+encodeURIComponent(reg));
+    if(!d.found){$("#tnRegistryResult").innerHTML='<span style="color:#b91c1c"><b>✗ No matching record found</b></span><br>Check the registration number exactly as printed in the Tamil Nadu Gazette.';return false}
+    const r=d.record;
+    $("#tnRegistryResult").innerHTML=`<span style="color:#047857"><b>✓ Government registration record found</b> · ${d.status}</span><br><b>Gazette record:</b> ${r.hospital_name_address}<br><b>District:</b> ${r.district} · <b>Type:</b> ${r.establishment_type}<br><b>Validity:</b> ${r.validity_from_source} → ${r.validity_to_source}<br><span class="muted">Source: Tamil Nadu Government Gazette No.20A · 20 May 2026</span>`;
+    return true;
+  }catch(e){$("#tnRegistryResult").textContent="❌ "+e.message;return false}
+}
+
+async function submitHospitalRegistration(){
+  try{
+    const checked=await lookupTNRegistry();
+    if(!checked) return;
+    const departments=[...document.querySelectorAll("#regDepts input:checked")].map(x=>x.value);
+    const d=await api("/hospital/register",{hospital_name:$("#regHName").value,state:"Tamil Nadu",district:$("#regDistrict").value,address:$("#regAddress").value,government_registration_no:$("#regGov").value,licence_no:$("#regLicence").value,staff_name:$("#regStaff").value,staff_id:$("#regStaffId").value,phone:$("#regPhone").value,email:$("#regEmail").value,latitude:+$("#regLat").value,longitude:+$("#regLon").value,beds:+$("#regBeds").value,icu:+$("#regIcu").value,departments});
+    setMsg($("#authMsg"),`✓ Government registration record found and application submitted. Application ID: <b>${d.application_id}</b><br>Admin verification is required before hospital login is enabled.` ,"success")
+  }catch(e){setMsg($("#authMsg"),"❌ "+e.message)}
+}
+async function adminDashboard(){
+  if(!session||session.role!=="admin")return;
+  try{const d=await api("/admin/applications");
+    $("#adminPending").innerHTML=d.pending.length?d.pending.map(a=>`<div class="card"><div class="row between"><h2 style="margin:0">${a.hospital_name}</h2><span class="badge amber">PENDING</span></div><div class="tiny muted" style="margin-top:8px">${a.district}, Tamil Nadu · ${a.application_id}</div><div class="tiny" style="margin-top:12px"><b>TNCERA registration:</b> ${a.government_registration_no}<br><b>Gazette status:</b> ${a.tn_registry_status||"—"}<br><b>Gazette hospital record:</b> ${a.tn_registry_record?.hospital_name_address||"—"}<br><b>Gazette validity:</b> ${(a.tn_registry_record?.validity_from_source||"—")} → ${(a.tn_registry_record?.validity_to_source||"—")}<br><b>Licence:</b> ${a.licence_no}<br><b>Authorized staff:</b> ${a.staff_name} · ${a.staff_id}<br><b>Phone:</b> ${a.phone}<br><b>Address:</b> ${a.address}<br><b>Location:</b> ${a.lat}, ${a.lon}</div><div class="row" style="margin-top:14px"><button class="btn green" data-app="${a.application_id}" data-approve="1">✓ Approve & create hospital</button><button class="btn" data-app="${a.application_id}" data-approve="0">Reject</button></div></div>`).join(""):'<div class="card"><p class="muted">No pending Tamil Nadu applications.</p></div>';
+    $("#adminProcessed").innerHTML=d.processed.length?d.processed.map(a=>`<div class="hospital"><div class="row between"><b>${a.hospital_name}</b><span class="badge ${a.status==="approved"?"green":"red"}">${a.status}</span></div><div class="tiny muted">${a.application_id} · TNCERA: ${a.government_registration_no} · Gazette: ${a.tn_registry_status||"—"}${a.mediroute_registration_id?` · MediRoute ID: ${a.mediroute_registration_id}`:""}</div></div>`).join(""):'<p class="muted">No processed applications yet.</p>';
+    document.querySelectorAll("#adminPending button").forEach(b=>b.onclick=async()=>{const approve=b.dataset.approve==="1";let note=approve?"Approved after demo registry review.":(prompt("Reason for rejection (optional):")||"");try{await api("/admin/decision",{application_id:b.dataset.app,approve,note});adminDashboard()}catch(e){alert(e.message)}});
+  }catch(e){$("#adminPending").innerHTML=`<div class="error">${e.message}</div>`}
+}
+
+$("#logoutPublic").onclick=logout;$("#logoutAmb").onclick=logout;$("#logoutHosp").onclick=logout;$("#adminLogout").onclick=logout;$("#adminRefresh").onclick=adminDashboard;
+
+/* Public */
+let publicGpsWatch=null, publicPos=null, publicGpsBusy=false;
+function startPublicGPS(){
+  if(publicGpsWatch!==null)return;
+  if(!navigator.geolocation){$("#pubGpsBadge").className="badge red";$("#pubGpsBadge").textContent="● GPS unavailable";$("#pubCoords").textContent="This browser does not provide location.";return}
+  $("#pubGpsBadge").className="badge amber";$("#pubGpsBadge").textContent="● Requesting GPS…";
+  publicGpsWatch=navigator.geolocation.watchPosition(pos=>{
+    publicPos={lat:pos.coords.latitude,lon:pos.coords.longitude,accuracy:pos.coords.accuracy||null};
+    if(publicOriginMarker)publicOriginMarker.setLatLng([publicPos.lat,publicPos.lon]);
+    if(publicMap&&publicFollow)publicMap.panTo([publicPos.lat,publicPos.lon],{animate:true});
+    $("#pubGpsBadge").className="badge green";$("#pubGpsBadge").textContent="● Live GPS";
+    $("#pubCoords").textContent=`${publicPos.lat.toFixed(6)}, ${publicPos.lon.toFixed(6)}${publicPos.accuracy?` · ±${Math.round(publicPos.accuracy)} m`:""}`;
+    refreshPublic();
+  },()=>{
+    $("#pubGpsBadge").className="badge amber";$("#pubGpsBadge").textContent="● Location permission needed";
+    $("#pubCoords").textContent="Allow location access to find hospitals around you.";
+  },{enableHighAccuracy:true,maximumAge:5000,timeout:10000});
+}
+function stopPublicGPS(){if(publicGpsWatch!==null){navigator.geolocation.clearWatch(publicGpsWatch);publicGpsWatch=null}publicPos=null}
+async function loadPublicOptions(){
+  const el=$("#pDept"); if(!el)return;
+  const current=el.value||"general";
+  const labels={general:locale==="ta"?"பொது அவசரநிலை":"General emergency",cardiology:locale==="ta"?"இதயவியல்":"Cardiology",neurology:locale==="ta"?"நரம்பியல்":"Neurology",trauma:locale==="ta"?"காயம்/விபத்து":"Trauma",respiratory:locale==="ta"?"சுவாசம்":"Respiratory",obstetrics:locale==="ta"?"மகப்பேறு":"Obstetrics"};
+  el.innerHTML=DEPTS.map(d=>`<option value="${d}">${labels[d]}</option>`).join("");
+  el.value=DEPTS.includes(current)?current:"general";
+}
+async function refreshPublic(){
+  if(!session||!canAccess("public"))return;
+  const name=session.name||session.driver||"Emergency user";
+  $("#pubName").textContent=name;$("#pubBlood").textContent=session.blood_group||"—";$("#pubId").textContent=session.id||"—";
+  const phone=session.phone||"";$("#pubPhone").textContent=phone?"••••••"+phone.slice(-4):"—";
+  if(!publicPos){
+    $("#pList").innerHTML='<div class="card"><b>📍 Live location is required</b><p class="muted" style="margin-bottom:0">Allow browser location access. MediRoute will then search real hospitals around you instead of using a fixed pickup point.</p></div>';
+    startPublicGPS(); return;
+  }
+  try{
+    const hs=await api(`/public/hospitals?lat=${encodeURIComponent(publicPos.lat)}&lon=${encodeURIComponent(publicPos.lon)}&dept=${encodeURIComponent($("#pDept").value||"general")}`);
+    $("#pList").innerHTML=hs.map((h,i)=>`<div class="hospital ${h.available?"":"unavailable"}" data-public-hospital='${JSON.stringify({id:h.id,name:h.name,lat:h.lat,lon:h.lon,km:h.km,eta:h.eta,doctor:h.doctor,shift:h.shift,available:h.available}).replace(/'/g,"&#39;")}' style="cursor:pointer" title="${locale==='ta'?"வழிகாட்டுதலைக் காண கிளிக் செய்யவும்":"Click to view directions"}"><div class="row between"><div><h3>${h.name}</h3><div class="tiny muted">${h.km} km · ${h.eta} min ${h.doctor?`· ${h.doctor} (${h.shift})`:""}</div></div><span class="badge ${h.available?"green":"gray"}">${h.available?(locale==='ta'?"✓ பொருத்தமானது":"✓ Suitable"):(locale==='ta'?"தற்போது பொருத்தமில்லை":"Not currently suitable")}</span></div><div class="row" style="margin-top:10px"><span class="badge gray">${locale==='ta'?"தர நம்பிக்கை":"Data confidence"} ${Math.round(h.confidence*100)}%</span><span class="tiny muted">${locale==='ta'?"புதுப்பிக்கப்பட்டது":"Updated"} ${h.updated_ago}s ${locale==='ta'?"முன்பு":"ago"}</span></div><div class="tiny" style="margin-top:9px;font-weight:800">📍 ${locale==='ta'?"வழிகாட்டுதலைக் காண மருத்துவமனை பெயரை கிளிக் செய்யவும்":"Click hospital to view directions"}</div></div>`).join("");
+    document.querySelectorAll('[data-public-hospital]').forEach(el=>el.onclick=()=>{try{const h=JSON.parse(el.getAttribute('data-public-hospital'));showPublicHospitalRoute(h)}catch(e){console.error(e)}});
+  }catch(e){$("#pList").innerHTML=`<div class="card"><b>Unable to load nearby hospitals</b><p class="muted">${e.message}</p></div>`}
+}
+async function initPublicMap(){
+  const el=$("#publicMap"); if(!el)return false;
+  if(publicMap){setTimeout(()=>publicMap.invalidateSize(true),50);return true;}
+  try{await ensureLeaflet();}catch(e){el.innerHTML=`<div style="height:100%;display:grid;place-items:center;padding:30px;text-align:center;background:#eef5f5"><div><b>Map service unavailable</b><br><span class="tiny">${e.message}</span></div></div>`;return false;}
+  publicMap=window.L.map(el,{zoomControl:true,preferCanvas:true}).setView([publicPos?.lat||11.019,publicPos?.lon||76.956],14);
+  window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(publicMap);
+  publicMap.on("dragstart",()=>{publicFollow=false;});
+  return true;
+}
+async function showPublicHospitalRoute(h){
+  if(!publicPos){alert(locale==='ta'?"உங்கள் GPS இருப்பிடம் இன்னும் கிடைக்கவில்லை. இருப்பிட அனுமதியை வழங்கவும்.":"Your GPS location is not available yet. Please allow location access and try again.");return;}
+  if(!Number.isFinite(Number(h.lat))||!Number.isFinite(Number(h.lon)))return;
+  $("#publicMapCard").classList.add("active");
+  setTimeout(()=>{const c=$("#publicMapCard");if(c&&c.scrollIntoView)c.scrollIntoView({behavior:"smooth",block:"start"})},60);
+  $("#publicMapTitle").textContent=locale==='ta'?"மருத்துவமனை வழிகாட்டுதல்":"Hospital directions";
+  $("#publicMapSubtitle").textContent=locale==='ta'?"உங்கள் தற்போதைய GPS இருப்பிடத்திலிருந்து":"From your current GPS location";
+  if(!(await initPublicMap()))return;
+  setTimeout(()=>publicMap.invalidateSize(true),80);
+  if(publicOriginMarker)publicMap.removeLayer(publicOriginMarker);
+  if(publicHospitalMarker)publicMap.removeLayer(publicHospitalMarker);
+  if(publicRouteLine)publicMap.removeLayer(publicRouteLine);
+  publicOriginMarker=window.L.marker([publicPos.lat,publicPos.lon],{icon:window.L.divIcon({className:"",html:'<div style="width:22px;height:22px;border-radius:50%;background:#1769ff;border:4px solid #fff;box-shadow:0 0 0 6px rgba(23,105,255,.28),0 3px 10px rgba(0,0,0,.35)"></div>',iconSize:[22,22],iconAnchor:[11,11]})}).addTo(publicMap).bindPopup(locale==='ta'?"உங்கள் இருப்பிடம்":"Your location");
+  publicHospitalMarker=window.L.marker([Number(h.lat),Number(h.lon)]).addTo(publicMap).bindPopup(`<b>${h.name}</b>`).openPopup();
+  publicMap.fitBounds(window.L.latLngBounds([[publicPos.lat,publicPos.lon],[Number(h.lat),Number(h.lon)]]),{padding:[50,50],maxZoom:14});
+  $("#publicRoutePanel").innerHTML=`<div class="row between"><div><div class="tiny muted">${locale==='ta'?"இலக்கு":"DESTINATION"}</div><div class="public-destination">${h.name}</div></div><span class="badge green">${locale==='ta'?"பொருத்தமான மருத்துவமனை":"Suitable hospital"}</span></div><div class="grid3" style="margin-top:12px"><div class="stat"><strong id="pubRouteEta">—</strong><span>${locale==='ta'?"சாலை ETA":"ROAD ETA"}</span></div><div class="stat"><strong id="pubRouteDistance">—</strong><span>${locale==='ta'?"சாலை தூரம்":"road distance"}</span></div><div class="stat"><strong>${h.km} km</strong><span>${locale==='ta'?"நேர்கோட்டு தூரம்":"straight-line distance"}</span></div></div><div id="pubRouteInstruction" class="public-dir">${locale==='ta'?"சாலை வழித்தடத்தை கணக்கிடுகிறது…":"Calculating road route…"}</div><div id="pubRouteSteps" style="margin-top:10px;max-height:220px;overflow:auto"></div>`;
+  publicFollow=false;
+  const seq=++publicRouteSeq; publicRouteBusy=true;
+  try{
+    const r=await fetch('/api/route',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({origin_lat:publicPos.lat,origin_lon:publicPos.lon,destination_lat:Number(h.lat),destination_lon:Number(h.lon),demo_traffic:false})});
+    if(!r.ok)throw new Error(await r.text());
+    const d=await r.json(); const route=d.route||{}; const points=route.points||[];
+    if(seq!==publicRouteSeq)return;
+    if(points.length<2)throw new Error('No usable road geometry returned');
+    publicRouteLine=window.L.polyline(points,{color:'#1769ff',weight:7,opacity:.94,lineCap:'round',lineJoin:'round'}).addTo(publicMap);
+    $("#pubRouteEta").textContent=`${route.eta_min||h.eta} min`; $("#pubRouteDistance").textContent=`${Number(route.distance_km||h.km).toFixed(1)} km`;
+    $("#pubRouteInstruction").textContent=route.instruction|| (locale==='ta'?"மருத்துவமனைக்குச் செல்லவும்":"Follow the road to the hospital");
+    publicMap.fitBounds(publicRouteLine.getBounds(),{padding:[55,55],maxZoom:16});
+    const steps=route.steps||[];
+    $("#pubRouteSteps").innerHTML=steps.length?`<div class="tiny muted" style="margin-bottom:4px"><b>${locale==='ta'?"வழிகாட்டுதல் படிகள்":"Step-by-step directions"}</b></div>`+steps.map((x,i)=>`<div class="tiny" style="padding:6px 0;border-top:1px solid #e5eeee"><b>${i+1}.</b> ${x.instruction}${x.distance_m?` <span class="muted">· ${x.distance_m>=1000?(x.distance_m/1000).toFixed(1)+" km":x.distance_m+" m"}</span>`:""}</div>`).join(""):"";
+  }catch(e){
+    $("#pubRouteInstruction").textContent=locale==='ta'?"சாலை வழித்தடத்தை கணக்கிட முடியவில்லை. மருத்துவமனை இருப்பிடம் வரைபடத்தில் காட்டப்பட்டுள்ளது.":"Unable to calculate a road route. The hospital location is still shown on the map.";
+  }finally{publicRouteBusy=false;}
+}
+if($("#publicCenter"))$("#publicCenter").onclick=()=>{if(!publicMap||!publicPos)return;publicFollow=true;publicMap.setView([publicPos.lat,publicPos.lon],17,{animate:true});};
+if($("#publicFullRoute"))$("#publicFullRoute").onclick=()=>{if(!publicMap)return;publicFollow=false;if(publicRouteLine)publicMap.fitBounds(publicRouteLine.getBounds(),{padding:[55,55],maxZoom:16});};
+if($("#publicMapClose"))$("#publicMapClose").onclick=()=>{$("#publicMapCard").classList.remove("active");};
+$("#pDept").onchange=refreshPublic;$("#pubRetryGps").onclick=()=>{stopPublicGPS();startPublicGPS()};
+
+/* Ambulance GPS + map */
+let mapInitPromise=null;
+async function initMap(){
+  const el=$("#map");
+  if(!el)return;
+  if(map){window.setTimeout(()=>map.invalidateSize(true),50);return;}
+  if(mapInitPromise)return mapInitPromise;
+  mapInitPromise=(async()=>{
+    try{await ensureLeaflet();}catch(e){mapInitPromise=null;const note=document.getElementById("mapError")||document.createElement("div");note.id="mapError";note.style.cssText="position:absolute;inset:0;display:grid;place-items:center;padding:30px;text-align:center;background:#eef5f5;color:#64767d;z-index:900";note.innerHTML=`<div><b>Map service unavailable</b><br><span class="tiny">${e.message}</span></div>`;el.appendChild(note);return;}
+    const old=document.getElementById("mapError");if(old)old.remove();
+    const start=currentPos.live?[currentPos.lat,currentPos.lon]:[11.019,76.956];
+    map=window.L.map(el,{zoomControl:true,preferCanvas:true,zoomAnimation:true}).setView(start,currentPos.live?16:13);
+    window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map);
+    ambMarker=window.L.marker(start,{icon:ambulanceIcon(ambulanceHeading)}).addTo(map).bindTooltip("🚑 Ambulance");
+    map.on('dragstart',()=>{followMap=false;});
+    [50,250,700].forEach(ms=>window.setTimeout(()=>map&&map.invalidateSize(true),ms));
+    if(currentPos.live)scheduleRouteRefresh();
+  })();
+  return mapInitPromise;
+}
+function ambulanceIcon(heading){
+  const deg=Number.isFinite(Number(heading))?Number(heading):0;
+  return window.L.divIcon({className:"",html:`<div class="amb-nav-marker" style="transform:rotate(${deg}deg)"><span>▲</span></div>`,iconSize:[38,38],iconAnchor:[19,19]});
+}
+function startGPS(){
+  if(gpsWatch!==null)return;
+  if(!navigator.geolocation){$("#gpsBadge").className="badge red";$("#gpsBadge").textContent="● GPS unavailable";$("#gpsState").textContent="Browser location is unavailable";return}
+  $("#gpsBadge").className="badge amber";$("#gpsBadge").textContent="● Requesting GPS permission…";
+  $("#gpsState").className="badge amber";$("#gpsState").textContent="Requesting GPS permission…";
+  const onPosition=pos=>{
+    const {latitude,longitude,heading}=pos.coords;
+    if(!Number.isFinite(latitude)||!Number.isFinite(longitude))return;
+    ambulanceHeading=Number.isFinite(Number(heading))?Number(heading):ambulanceHeading;
+    updateAmbPosition(latitude,longitude,true);
+    sendCurrentLocation();
+  };
+  const onError=err=>{
+    const code=err&&err.code;
+    const msg=code===1?"Location permission denied — allow Location for this site in the browser address-bar settings.":code===2?"Location unavailable — turn on Windows/browser location services and try again.":"GPS timed out — keep the page open and retry.";
+    $("#gpsBadge").className="badge red";$("#gpsBadge").textContent="● GPS not connected";
+    $("#gpsState").className="badge red";$("#gpsState").textContent=msg;
+    $("#liveCoords").textContent=msg;
+  };
+  // Get one position immediately, then keep the ambulance location live.
+  navigator.geolocation.getCurrentPosition(onPosition,onError,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+  gpsWatch=navigator.geolocation.watchPosition(onPosition,onError,{enableHighAccuracy:true,maximumAge:3000,timeout:15000});
+  locationTimer=setInterval(()=>{if(currentPos.live)sendCurrentLocation();},5000);
+}
+function stopGPS(){if(gpsWatch!==null){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null}if(locationTimer){clearInterval(locationTimer);locationTimer=null}if(routeTimer){clearInterval(routeTimer);routeTimer=null}}
+let currentPos={lat:11.0190,lon:76.9558,live:false};
+let judgeDemo=false;
+function updateAmbPosition(lat,lon,live){
+  currentPos={lat,lon,live:live||currentPos.live};
+  if(live){judgeDemo=false;$("#demoModeNote").classList.add("hidden");$("#judgeDemo").textContent="🧪 Use Nagercoil judge demo location";}
+  if(ambMarker){ambMarker.setLatLng([lat,lon]);if(ambulanceHeading!=null)ambMarker.setIcon(ambulanceIcon(ambulanceHeading));}
+  if(map && currentPos.live && followMap){ map.panTo([lat,lon],{animate:true,duration:.35,noMoveStart:true}); }
+  $("#liveCoords").textContent=`${lat.toFixed(6)}, ${lon.toFixed(6)}${live?" · live GPS":judgeDemo?" · judge demo":" · waiting for live GPS"}`;
+  if(currentPos.live){scheduleRouteRefresh();$("#gpsBadge").className="badge green";$("#gpsBadge").innerHTML='<span class="live-dot"></span> '+(locale==='ta'?"GPS நேரலை":"GPS live");$("#gpsState").className="badge green";$("#gpsState").textContent="GPS live";}
+}
+let routeRefreshTimer=null;
+function scheduleRouteRefresh(){
+  if(routeRefreshTimer) return;
+  routeRefreshTimer=setTimeout(async()=>{
+    routeRefreshTimer=null;
+    try{
+      if(session && canAccess("amb")){
+        const d=await api("/ambulance/"+session.id), r=d.reservation;
+        if(r && r.hospital_lat) await updateRoute(r.hospital_lat,r.hospital_lon,r.hospital_name,r.eta);
+      }
+    }catch(e){}
+  },900);
+}
+
+async function sendCurrentLocation(){
+  if(!session||!canAccess("amb"))return;
+  try{await api(`/ambulance/${session.id}/location`,{lat:currentPos.lat,lon:currentPos.lon});}catch(e){}
+}
+$("#centerMap").onclick=()=>{followMap=true;if(map)map.setView([currentPos.lat,currentPos.lon],16,{animate:true});};
+function maneuverText(m){
+  const type=m?.type||""; const mod=m?.modifier||"";
+  if(locale==="ta"){
+    const side={left:"இடப்புறம்",right:"வலப்புறம்",straight:"நேராக",slight_left:"சிறிது இடப்புறம்",slight_right:"சிறிது வலப்புறம்",uturn:"யூ-டர்ன்"};
+    const dir=side[mod]||"";
+    if(type==="depart")return "பயணத்தை தொடங்குங்கள்";
+    if(type==="arrive")return "நீங்கள் மருத்துவமனையை அடைந்துவிட்டீர்கள்";
+    if(type==="roundabout"||type==="rotary")return `ரவுண்ட்அபவுட்டில் ${dir||"நுழைந்து செல்லுங்கள்"}`;
+    if(type==="merge")return `${dir||"முன்னே"} இணையும் சாலையில் செல்லுங்கள்`;
+    if(type==="fork")return `${dir||"சரியான"} கிளைச் சாலையை எடுத்துக்கொள்ளுங்கள்`;
+    if(type==="on_ramp")return `${dir||"முன்னே"} ரேம்பில் செல்லுங்கள்`;
+    if(type==="off_ramp")return `${dir||"முன்னே"} வெளியேறும் ரேம்பை எடுத்துக்கொள்ளுங்கள்`;
+    if(type==="end_of_road")return `சாலை முடிவில் ${dir||"முன்னே"} செல்லுங்கள்`;
+    if(type==="turn")return `${dir||"திரும்பி"} செல்லுங்கள்${m?.name?` — ${m.name} சாலையில்`:""}`;
+    return `${dir||"நேராக"} தொடர்ந்து செல்லுங்கள்${m?.name?` — ${m.name}`:""}`;
+  }
+  const names={turn:"Turn",merge:"Merge",fork:"Take the fork",roundabout:"Enter the roundabout",rotary:"Enter the rotary",depart:"Start",arrive:"Arrive",new_name:"Continue",continue:"Continue",on_ramp:"Take the ramp",off_ramp:"Take the exit",end_of_road:"At the end of the road"};
+  let text=names[type]||"Continue";
+  if(type==="depart")return "Start driving";
+  if(type==="arrive")return "You have arrived at the hospital";
+  if(mod)text += " " + mod.replace(/_/g," ");
+  if(m?.name)text += " onto " + m.name;
+  return text;
+}
+function metresText(m){return m>=1000?(m/1000).toFixed(1)+" km":Math.round(m)+" m"}
+function routeOrigin(){
+  return {lat:currentPos.lat,lon:currentPos.lon,demo:judgeDemo};
+}
+function kmJs(a,b,c,d){const p=Math.PI/180;const x=Math.sin((c-a)*p/2)**2+Math.cos(a*p)*Math.cos(c*p)*Math.sin((d-b)*p/2)**2;return 12742*Math.asin(Math.sqrt(x));}
+async function updateRoute(hLat,hLon,name,eta){
+  if(!map) initMap();
+  if(!map || !Number.isFinite(Number(hLat)) || !Number.isFinite(Number(hLon))) return;
+  const origin=routeOrigin();
+  const hla=Number(hLat), hlo=Number(hLon);
+  const destinationKey=`${hla.toFixed(5)},${hlo.toFixed(5)}`;
+  const originKey=`${origin.lat.toFixed(5)},${origin.lon.toFixed(5)}`;
+  const key=`${destinationKey}|${originKey}`;
+  const movedSinceLastRoute=lastRoutedOrigin?kmJs(lastRoutedOrigin.lat,lastRoutedOrigin.lon,origin.lat,origin.lon)*1000:Infinity;
+  const destinationChanged=lastRouteKey.split('|')[0]!==destinationKey;
+  const hadValidRoute=!!routeLine;
+
+  if(!hospitalMarker){
+    hospitalMarker=window.L.marker([hla,hlo],{icon:window.L.divIcon({className:"",html:'<div style="background:#d7193f;color:#fff;border-radius:50%;width:36px;height:36px;display:grid;place-items:center;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.25);font-size:18px">🏥</div>',iconSize:[36,36],iconAnchor:[18,18]})}).addTo(map).bindTooltip(name);
+  }else hospitalMarker.setLatLng([hla,hlo]).setTooltipContent(name);
+  if(ambMarker)ambMarker.setLatLng([origin.lat,origin.lon]);
+
+  // Keep the last valid road geometry. Never draw a temporary straight line.
+  if(routeLine && !destinationChanged && movedSinceLastRoute<75){
+    updateNavOverlay(nextInstruction||"Follow the route to the hospital",lastRouteEta||eta,routeDistanceMeters);
+    return;
+  }
+  if(destinationChanged && routeLine){map.removeLayer(routeLine);routeLine=null;}
+  if(routeBusy)return;
+  routeBusy=true;
+  const requestId=++routeRequestSeq;
+  let points=null, instruction=locale==='ta'?"மருத்துவமனைக்கு செல்லவும்":"Continue toward the hospital";
+  let instructionDistance="", routeDuration=null, routeMeters=null, trafficLevel="unknown", trafficMode="";
+  showNavigationLoading(name);
+  let timeout=null;
+  try{
+    const controller=new AbortController();
+    timeout=window.setTimeout(()=>controller.abort(),10000);
+    const r=await fetch('/api/route',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({origin_lat:origin.lat,origin_lon:origin.lon,destination_lat:hla,destination_lon:hlo,demo_traffic:true}),signal:controller.signal});
+    window.clearTimeout(timeout);
+    if(!r.ok)throw new Error(await r.text());
+    const d=await r.json();
+    const route=d.route||{};
+    points=route.points||[];
+    if(points.length<2)throw new Error('No usable road geometry returned');
+    routeDuration=Number(route.eta_min||eta||0);
+    routeMeters=Number(route.distance_km||0)*1000;
+    instruction=route.instruction||instruction;
+    instructionDistance=metresText(Number(route.instruction_distance_m||0));
+    trafficLevel=route.traffic_level||'unknown';
+    trafficMode=d.traffic_mode||'';
+    window.__trafficState={level:trafficLevel,mode:trafficMode,zones:route.traffic_zones||[]};
+  }catch(e){
+    if(timeout)window.clearTimeout(timeout);
+    console.warn('Valhalla routing unavailable',e);
+  }
+  if(requestId!==routeRequestSeq){routeBusy=false;return;}
+  if(points&&points.length>=2){
+    if(routeLine)map.removeLayer(routeLine);
+    routeLine=window.L.polyline(points,{color:'#1769ff',weight:8,opacity:.96,lineCap:'round',lineJoin:'round'}).addTo(map);
+    lastRouteEta=routeDuration;routeDistanceMeters=routeMeters;nextInstruction=instruction;
+    lastRoutedOrigin={lat:origin.lat,lon:origin.lon};lastRouteKey=key;
+    updateNavOverlay(instruction,routeDuration,routeMeters,instructionDistance,trafficLevel,trafficMode);
+    const tripEtaEl=document.getElementById('tripRoadEta');
+    if(tripEtaEl) tripEtaEl.textContent=routeDuration?`${routeDuration} min`:'—';
+    if(!hadValidRoute || destinationChanged){
+      const bounds=window.L.latLngBounds(points.map(p=>[p[0],p[1]]));
+      map.fitBounds(bounds,{padding:[70,150],maxZoom:16});
+    }
+    if($('#voiceNav')?.checked && instruction){
+      const phrase=instructionDistance?`${instructionDistance} ${locale==='ta'?'பிறகு ': 'then '}${instruction}`:instruction;
+      speak(phrase);
+    }
+  }else{
+    // Routing failure leaves the existing road route untouched.
+    updateNavOverlay(locale==='ta'?"சாலை வழித்தடத்தை கணக்கிடுகிறது…":"Calculating road route…",lastRouteEta||eta,routeDistanceMeters,'',trafficLevel,trafficMode);
+  }
+  routeBusy=false;
+}
+function directionArrow(text){
+  const t=(text||'').toLowerCase();
+  if(t.includes('left')||t.includes('இடப்ப'))return '↰';
+  if(t.includes('right')||t.includes('வலப்ப'))return '↱';
+  if(t.includes('u-turn')||t.includes('யூ-டர்ன்'))return '↶';
+  if(t.includes('roundabout')||t.includes('ரவுண்ட'))return '⟳';
+  if(t.includes('exit')||t.includes('வெளியே'))return '↗';
+  return '↑';
+}
+function showNavigationLoading(name){
+  const o=$("#navOverlay"), b=$("#navBottom");
+  if(o)o.style.display='block'; if(b)b.style.display='block';
+  $("#navArrow").textContent='↑';$("#navInstruction").textContent=locale==='ta'?'சாலை வழித்தடத்தை கணக்கிடுகிறது…':'Calculating road route…';
+  $("#navSub").textContent=name||'Hospital';
+  $("#navEta").textContent='—';$("#navDistance").textContent='—';
+}
+function updateNavOverlay(instruction,eta,meters,distText,trafficLevel='unknown',trafficMode=''){
+  const o=$("#navOverlay"), b=$("#navBottom");
+  if(o)o.style.display='block'; if(b)b.style.display='block';
+  $("#navArrow").textContent=directionArrow(instruction);
+  $("#navInstruction").textContent=instruction;
+  $("#navSub").textContent=distText?`${distText} · ${locale==='ta'?'அடுத்த வழிமுறை':'next maneuver'}`:(locale==='ta'?'மருத்துவமனைக்கு செல்லவும்':'Drive toward the hospital');
+  $("#navEta").textContent=eta?`${eta} min`:'—';
+  $("#navDistance").textContent=meters?metresText(meters):'—';
+  const rp=$("#routePanel");
+  if(rp){
+    const label=trafficLevel==='heavy'?'Heavy traffic':trafficLevel==='moderate'?'Moderate traffic':trafficLevel==='light'?'Light traffic':'Traffic unavailable';
+    const cls=trafficLevel==='heavy'?'heavy':trafficLevel==='moderate'?'moderate':'';
+    rp.dataset.traffic=trafficLevel;
+    const mode=trafficMode?`<div class="tiny muted" style="margin-top:8px">${trafficMode}</div>`:'';
+    rp.innerHTML=`<div class="row between"><div><div class="tiny muted">CURRENT DESTINATION</div><div class="destination">${hospitalMarker?.getTooltip()?.getContent?.()||'Hospital'}</div></div><span class="traffic-badge"><span class="traffic-dot ${cls}"></span>${label}</span></div><div style="margin-top:8px"><b>${instruction}</b></div><div class="tiny muted" style="margin-top:5px">${distText||''} · ${eta?eta+' min ETA':''} · ${meters?metresText(meters):''}</div>${mode}</div>`;
+  }
+}
+async function amb(){
+  if(!session||!canAccess("amb"))return;
+  try{
+    initMap();
+    const d=await api("/ambulance/"+session.id),r=d.reservation;
+    if(d.location && !currentPos.live && !judgeDemo)updateAmbPosition(d.location.lat,d.location.lon,false);
+    if(!r){
+      $("#ambStatusBadge").className="badge gray";$("#ambStatusBadge").textContent="No active trip";
+      $("#tripSummary").innerHTML='<p class="muted">Report an emergency to start the AI hospital allocation.</p>';
+      $("#routePanel").innerHTML='<div class="muted">Waiting for an emergency request…</div>';
+      return;
+    }
+    $("#ambStatusBadge").className="badge "+(r.status==="accepted"?"green":r.status==="pending"?"amber":"gray");$("#ambStatusBadge").textContent=r.status;
+    const cand=(r.candidates||[]).slice(0,5).map(c=>`<div class="tiny" style="padding:7px 0;border-top:1px solid #e5eeee"><b>${c.name}</b> · ${c.km} km · ${c.eta} min ${c.available?'✓ candidate':'— '+(c.reason||'not selected')}<br><span class="muted">${c.care_mode||''}${c.time_to_definitive!=null?` · time-to-required-care ${c.time_to_definitive} min`:''}</span></div>`).join('');
+    $("#tripSummary").innerHTML=`<div class="row between"><div><div class="tiny muted">${locale==='ta'?'இலக்கு':'DESTINATION'}</div><div class="destination">${r.hospital_name||"—"}</div></div><span class="badge ${r.priority===1?"red":r.priority===2?"amber":"gray"}">${r.severity||('Priority '+r.priority)}</span></div><div class="grid3" style="margin-top:14px"><div class="stat"><strong id="tripRoadEta">—</strong><span>${locale==='ta'?'சாலை ETA':'live road ETA'}</span></div><div class="stat"><strong>${r.time_to_required_care!=null?r.time_to_required_care+' min':'—'}</strong><span>${locale==='ta'?'தேவையான சிகிச்சை நேரம்':'estimated time-to-required-care'}</span></div><div class="stat"><strong>${r.status}</strong><span>${locale==='ta'?'ஒதுக்கீட்டு நிலை':'allocation status'}</span></div></div><div class="card" style="margin-top:12px;background:#f4fbfa;border:1px solid #d7eeee"><b>${locale==='ta'?'ஏன் இந்த மருத்துவமனை?':'Why this hospital?'}</b><div class="tiny muted" style="margin-top:6px">${r.selection_reason||'Severity, stabilization, definitive capability, resources and travel time were considered.'}</div><div class="tiny" style="margin-top:8px"><b>Required resources:</b> ${(r.required_resources||[]).join(' · ')||'Standard emergency care'}${r.blood_group?`<br><b>Patient blood group:</b> ${r.blood_group} · securely attached to hospital emergency packet` : ''}</div></div><div id="rerouteCard" class="card" style="margin-top:12px;background:#fff8f2;border:1px solid #f0d7c5;box-shadow:none">${r.reroute_recommended?`<b>⚠ Critical-condition reroute recommended</b><div class="tiny muted" style="margin-top:5px">${r.reroute_reason||'A faster suitable alternative was found from the current GPS.'}</div><div class="row" style="margin-top:9px"><button class="btn primary" id="applyReroute">Confirm reroute to ${r.recommended_hospital_name||'recommended hospital'}</button></div>`:`<b>Patient condition</b><div class="tiny muted" style="margin-top:5px">${r.patient_status||'No escalation reported.'}${r.routing_suspended?' · Routing suspended':''}</div>`}</div><div class="card" style="margin-top:12px;background:#fbfcfc;box-shadow:none"><b>AI candidate comparison</b>${cand||'<div class="tiny muted">Candidate details unavailable.</div>'}</div><div class="timeline">${(d.events||[]).slice().reverse().map(e=>`<div class="event"><time>${e.t}</time><span>${e[locale]}</span></div>`).join("")}</div>`;
+    const applyBtn=document.getElementById('applyReroute');
+    if(applyBtn) applyBtn.onclick=async()=>{try{await api(`/ambulance/${session.id}/apply-reroute`,{});setMsg(document.getElementById('conditionMsg'),'✓ Reroute confirmed. Recalculating live road route.','success');await amb()}catch(e){setMsg(document.getElementById('conditionMsg'),'❌ '+e.message)}};
+    if(d.events?.length>spoken){speak(d.events[d.events.length-1][locale]);spoken=d.events.length}
+    if(r.status==='pending'||r.status==='accepted'){if(!routeTimer) routeTimer=setInterval(()=>amb(),5000);}
+    if(r.hospital_lat==null || r.hospital_lon==null){
+      // Backward-compatible recovery for an older running backend that does
+      // not yet include hospital coordinates in /ambulance/{id}.
+      if(r.hospital){
+        try{
+          const h=await api("/hospital/"+r.hospital);
+          r.hospital_lat=h.lat;r.hospital_lon=h.lon;r.hospital_name=h.name||r.hospital_name;
+        }catch(e){console.warn("Hospital coordinate lookup failed",e)}
+      }
+    }
+    if(r.hospital_lat!=null && r.hospital_lon!=null){
+      await updateRoute(Number(r.hospital_lat),Number(r.hospital_lon),r.hospital_name||"Hospital",r.eta);
+    }else{
+      $("#routePanel").innerHTML='<div class="muted">Hospital coordinates are unavailable. Please restart the MediRoute backend.</div>';
+    }
+  }catch(e){console.error(e); $("#routePanel").innerHTML=`<div class="muted">Route display error: ${String(e.message||e)}</div>`;}
+}
+function speak(text){
+  if(!$("#voiceNav").checked||!window.speechSynthesis||!text)return;
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang=lang();
+  const voices=window.speechSynthesis.getVoices();
+  const wanted=locale==="ta"?["ta-IN","ta"]:["en-IN","en-US","en"];
+  const v=voices.find(x=>wanted.some(w=>(x.lang||"").toLowerCase().startsWith(w.toLowerCase())));
+  if(v)u.voice=v;
+  u.rate=locale==="ta"?0.92:1.0;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+window.speechSynthesis?.addEventListener?.("voiceschanged",()=>{});
+async function updatePatientCondition(status){
+  try{
+    const r=await api(`/ambulance/${session.id}/patient-status`,{status,note:"Updated by ambulance/authorized EMS interface."});
+    if(r.routing_suspended){setMsg(document.getElementById('conditionMsg'),'🛑 Routing suspended. Authorized medical personnel must follow the local death/transport protocol.','error');}
+    else if(r.reroute_recommended){setMsg(document.getElementById('conditionMsg'),`⚠ Reassessment complete. Recommended: ${r.recommended_hospital||'alternate hospital'}${r.recommended_time_to_care!=null?` · estimated time-to-required-care ${r.recommended_time_to_care} min`:''}. Review the trip card and confirm reroute if clinically appropriate.`,'error');}
+    else{setMsg(document.getElementById('conditionMsg'),'✓ Patient status updated. No automatic destination change was made.','success');}
+    await amb();
+  }catch(e){setMsg(document.getElementById('conditionMsg'),'❌ '+e.message,'error')}
+}
+$("#condDeteriorating").onclick=()=>updatePatientCondition('deteriorating');
+$("#condCritical").onclick=()=>updatePatientCondition('critical');
+$("#condStable").onclick=()=>updatePatientCondition('stable');
+$("#condDeceased").onclick=()=>{if(confirm('Only an authorized medical professional may report death. Continue?'))updatePatientCondition('deceased')};
+$("#mic").onclick=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return alert("Speech recognition is supported in Chrome/Edge.");const r=new SR();r.lang=lang();r.onresult=e=>$("#aSym").value=e.results[0][0].transcript;r.start()};
+$("#judgeDemo").onclick=async()=>{
+  if(!judgeDemo){
+    judgeDemo=true;stopGPS();updateAmbPosition(8.1833,77.4119,false);$("#demoModeNote").classList.remove("hidden");$("#judgeDemo").textContent="📍 Return to live GPS";if(map)map.setView([8.1833,77.4119],14,{animate:true});await sendCurrentLocation();await amb();
+  }else{
+    judgeDemo=false;$("#demoModeNote").classList.add("hidden");$("#judgeDemo").textContent="🧪 Use Nagercoil judge demo location";startGPS();
+  }
+};
+$("#go").onclick=async()=>{
+  try{
+    const symptoms=$("#aSym").value.trim();
+    if(!symptoms || /^(hi|hai|hello|hey|hii|test|testing|ok|okay|fine|yes|no)$/i.test(symptoms)) throw new Error(locale==='ta'?"நோயாளியின் உண்மையான அறிகுறி அல்லது விபரத்தை உள்ளிடவும்.":"Please enter the patient's actual symptom or emergency details, not a greeting or test message.");
+    if(!judgeDemo && !currentPos.live) throw new Error("Live GPS is not available yet. Allow location access or use the clearly labelled Nagercoil judge demo.");
+    $("#go").disabled=true;$("#dispatchMsg").innerHTML="";
+    const payload={ambulance_id:session.id,symptoms,lat:currentPos.lat,lon:currentPos.lon,public_user_id:$("#aPublicId").value.trim()||null,demo_mode:judgeDemo};
+    if(judgeDemo)payload.pickup="Nagercoil";
+    const d=await api("/dispatch",payload);
+    spoken=0;setMsg($("#dispatchMsg"),d.status==="no_hospital"?"⚠ No suitable nearby hospital found within the preferred emergency travel time.":(locale==='ta'?"✓ அருகிலுள்ள பொருத்தமான மருத்துவமனை தேடல் தொடங்கியது.":"✓ Nearby suitable-hospital search and AI allocation started."),d.status==="no_hospital"?"error":"success");await amb(); if(!routeTimer) routeTimer=setInterval(()=>amb(),5000);
+  }catch(e){setMsg($("#dispatchMsg"),"❌ "+e.message)}finally{$("#go").disabled=false}
+};
+$("#voiceNav").onchange=()=>{};
+
+/* Hospital */
+async function hosp(){
+  if(!session||session.role!=="hosp")return;
+  HID=session.id||"H1";
+  const h=await api("/hospital/"+HID);
+  $("#hName").textContent=h.name;
+  $("#hIdentity").textContent=`${h.district||""}${h.district?", ":""}${h.state||""} · ${h.address||""}`;
+  $("#hConf").textContent=`Data confidence ${Math.round(h.confidence*100)}%`;
+  const source=h.demo?"Synthetic hackathon hospital data — capacity and specialist availability are simulated.":(h.verified_source?`Registration source: ${h.verified_source}`:"Hospital operational data");
+  $("#hSource").innerHTML=`<b>Hospital account locked to this facility.</b><br>${source}${h.government_registration_no?`<br><span class="tiny">Registration: ${h.government_registration_no}</span>`:""}`;
+  $("#hCap").innerHTML=`<div class="grid3"><div class="stat"><strong>${h.available}</strong><span>${locale==='ta'?'புதிய ஒதுக்கீட்டிற்கு இலவசம்':'Free emergency beds'}</span></div><div class="stat"><strong>${h.held}</strong><span>${locale==='ta'?'ஆம்புலன்ஸ்களுக்கு ஒதுக்கப்பட்டது':'Temporarily reserved'}</span></div><div class="stat"><strong>${h.icu}</strong><span>${locale==='ta'?'ICU திறன்':'ICU beds'}</span></div></div>`;
+  if(document.activeElement.id!=="hBeds"&&document.activeElement.id!=="hIcu"){$("#hBeds").value=h.beds;$("#hIcu").value=h.icu}
+  $("#hSpec").innerHTML=Object.entries(h.depts).map(([k,d])=>`<div class="doctor-line"><input type="checkbox" style="width:auto" ${d.on?"checked":""} data-d="${k}"><input type="text" value="${String(d.doctor||"").replace(/"/g,'&quot;')}" data-doctor="${k}" placeholder="Doctor name"><input type="text" value="${String(d.shift||"").replace(/"/g,'&quot;')}" data-shift="${k}" placeholder="09:00-17:00"><button class="btn" data-save-spec="${k}">Save</button></div>`).join("");
+  document.querySelectorAll("#hSpec [data-save-spec]").forEach(b=>b.onclick=async()=>{const k=b.dataset.saveSpec;const row=b.parentElement;const on=row.querySelector('input[type="checkbox"]').checked;const doctor=row.querySelector('[data-doctor]').value;const shift=row.querySelector('[data-shift]').value;await api(`/hospital/${HID}/specialist`,{dept:k,on,doctor,shift});hosp()});
+  $("#hInc").innerHTML=h.incoming.length?h.incoming.map(r=>{const ep=r.emergency_profile;return `<div class="alert"><div class="row between"><b>🚨 ${r.ambulance}</b><span class="badge ${r.priority===1?'red':r.priority===2?'amber':'gray'}">${r.severity||('Priority '+r.priority)}</span></div><div style="margin-top:7px"><b>${r.dept}</b> · ETA ${r.eta} min · ${r.care_mode||'care matching'}</div><div class="muted tiny">${r.symptoms}</div><div class="tiny" style="margin-top:9px"><b>Required resources:</b> ${(r.required_resources||[]).join(' · ')||'Standard emergency care'}</div>${ep?`<div class="card" style="margin-top:9px;background:#fffaf2;box-shadow:none"><b>🔐 Authorized emergency profile</b><br>Patient: ${ep.name||'—'} · Profile: ${ep.id||'—'}<br><b>Blood group: ${ep.blood_group||'—'}</b>${ep.phone_last4?` · Phone ending ${ep.phone_last4}`:''}<br><span class="tiny muted">Self-reported blood group. Verify with the patient before clinical use.</span></div>`:''}${r.status==="pending"?`<div class="row" style="margin-top:11px"><button class="btn green" data-a="1" data-r="${r.id}">Accept & prepare</button><button class="btn" data-a="0" data-r="${r.id}">Reject & reroute</button></div>`:`<div style="margin-top:8px"><span class="badge green">${r.status}</span></div>`}</div>`}).join(""):'<p class="muted">No incoming emergencies.</p>';
+  document.querySelectorAll("#hInc button").forEach(b=>b.onclick=async()=>{await api(`/hospital/${HID}/respond/${b.dataset.r}`,{accept:b.dataset.a==="1"});hosp()});
+}
+$("#hBloodOpen").onclick=()=>{const box=$("#hBloodBox");box.classList.toggle("hidden");if(!box.classList.contains("hidden"))$("#hBloodGroup").focus()};
+
+$("#hFindBlood").onclick=async()=>{
+  try{
+    const bg=$("#hBloodGroup").value;
+    if(!bg)throw new Error("Select a blood group first.");
+    const d=await api(`/hospital/${HID}/blood-donors?blood_group=${encodeURIComponent(bg)}`);
+    if(!d.donors.length){$("#hBloodResults").innerHTML=`<div class="card" style="box-shadow:none;background:#fff">No opted-in public contacts found for <b>${bg}</b> right now.</div>`;return}
+    $("#hBloodResults").innerHTML=`<div class="tiny muted" style="margin-bottom:8px"><b>${d.count}</b> opted-in public contact${d.count===1?"":"s"} for <b>${bg}</b></div>`+d.donors.map(u=>`<div class="alert" style="background:#fff;margin-bottom:8px"><div class="row between"><div><b>${u.name}</b><div class="tiny muted">Blood group: <b>${u.blood_group}</b> · Profile: ${u.id}</div></div><a class="btn green" href="tel:${u.phone}">📞 ${u.phone}</a></div><div class="tiny muted" style="margin-top:6px">${u.note}</div></div>`).join("");
+  }catch(e){$("#hBloodResults").innerHTML=`<div class="error">❌ ${e.message}</div>`}
+};
+
+$("#hSave").onclick=async()=>{await api(`/hospital/${HID}/capacity`,{beds:+$("#hBeds").value,icu:+$("#hIcu").value});hosp()};
+$("#hPriv").onclick=async()=>{const h=await api("/hospital/"+HID);await api(`/hospital/${HID}/capacity`,{beds:Math.max(0,h.beds-1),icu:h.icu});hosp()};
+$("#hAddSpec").onclick=async()=>{try{await api(`/hospital/${HID}/specialist/add`,{dept:$("#newDept").value,doctor:$("#newDoctor").value,shift:$("#newShift").value,on:$("#newOn").checked});$("#newDept").value="";$("#newDoctor").value="";hosp()}catch(e){alert(e.message)}};
+
+(async()=>{
+  locale=localStorage.getItem("mediroute_locale")||"en";
+  $("#lang").textContent=locale==="en"?"தமிழ்":"English";
+  applyLocale();
+  await loadPublicOptions();
+  loadRoleSessions();
+  const saved=localStorage.getItem("mediroute_session");
+  if(saved){try{session=JSON.parse(saved);activeRole=session.activeRole||session.role||"public";if(!canAccess(activeRole))activeRole=rolesForSession()[0]||"public";
+    if(!roleSessions[activeRole])saveRoleSession(activeRole,session);
+    showApp(activeRole);
+  }catch(e){localStorage.removeItem("mediroute_session")}}
+  await loadPublicOptions();renderAuth();if(session){if(activeRole==="public")startPublicGPS();refreshPublic();}
+  setInterval(()=>{
+    if(activeRole==="amb" && canAccess("amb"))amb();
+    if(activeRole==="hosp" && canAccess("hosp"))hosp();
+    if(activeRole==="admin" && canAccess("admin"))adminDashboard();
+    if(canAccess("public") && activeRole==="public")refreshPublic();
+  },5000);
+})();
+</script>
+</body>
+</html>

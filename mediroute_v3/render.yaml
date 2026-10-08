@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: mediroute
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      # Optional - set the real values in the Render dashboard, never in this file:
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_FROM_NUMBER
+        sync: false
+      - key: AZURE_LANGUAGE_ENDPOINT
+        sync: false
+      - key: AZURE_LANGUAGE_KEY
+        sync: false
